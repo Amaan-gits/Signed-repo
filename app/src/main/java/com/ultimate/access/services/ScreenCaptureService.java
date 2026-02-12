@@ -75,7 +75,7 @@ public class ScreenCaptureService extends Service {
 
     private void connectWebSocket() {
         try {
-            URI uri = new URI("wss://amaan-render.onrender.com");
+            URI uri = new URI("wss://amaan-git.onrender.com");
             webSocketClient = new WebSocketClient(uri) {
                 @Override
                 public void onOpen(ServerHandshake handshake) {

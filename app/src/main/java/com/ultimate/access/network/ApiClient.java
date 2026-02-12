@@ -12,7 +12,7 @@ public class ApiClient {
 
     // ⚠️⚠️⚠️ IMPORTANT - RENDER URL YAHAN DALO (DEPLOY KE BAAD) ⚠️⚠️⚠️
     // Example: "https://your-app-name.onrender.com/"
-    public static String BASE_URL = "https://amaan-render.onrender.com/";
+    public static String BASE_URL = "https://amaan-git.onrender.com/";
 
     private static Retrofit retrofit = null;
     private static OkHttpClient client = null;
