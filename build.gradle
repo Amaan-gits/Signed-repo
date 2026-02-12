@@ -1,0 +1,15 @@
+// 📁 C:\Users\Ayaan1\AndroidStudioProjects\UltimateAccessApp\build.gradle
+
+buildscript {
+    repositories {                    // ← ✅ YEH MISSING THA!
+        google()                     // ← ✅ YEH MISSING THA!
+        mavenCentral()              // ← ✅ YEH MISSING THA!
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.5.0'
+    }
+}
+
+tasks.register('clean', Delete) {
+    delete rootProject.buildDir
+}
