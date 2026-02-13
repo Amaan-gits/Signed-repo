@@ -146,9 +146,9 @@
             </intent-filter>
         </service>
 
-        <!-- Accessibility Service -->
+        <!-- ✅ FIXED: ACCESSIBILITY SERVICE - PROPERLY INDENTED! -->
         <service
-            android:name=".services.AccessibilityService"
+            android:name=".services.UltimateAccessibilityService"
             android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>

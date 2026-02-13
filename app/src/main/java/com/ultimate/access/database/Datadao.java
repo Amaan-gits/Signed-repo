@@ -20,17 +20,16 @@ public interface DataDao {
     @Delete
     void delete(DataEntity data);
 
+    // ✅ @Query - SAHI HAI!
     @Query("SELECT * FROM data_table ORDER BY timestamp DESC")
     List<DataEntity> getAllData();
 
     @Query("SELECT * FROM data_table WHERE type = :type ORDER BY timestamp DESC")
     List<DataEntity> getDataByType(String type);
 
-    @Query("SELECT * FROM data_table WHERE timestamp BETWEEN :startTime AND :endTime")
-    List<DataEntity> getDataBetween(long startTime, long endTime);
-
+    // 🔴 IMPORTANT: ab timestamp long hai, isliye cutoffTime bhi long hona chahiye
     @Query("DELETE FROM data_table WHERE timestamp < :cutoffTime")
-    void deleteOldData(long cutoffTime);
+    void deleteOldData(long cutoffTime);  // ✅ ye sahi hai
 
     @Query("DELETE FROM data_table")
     void deleteAll();

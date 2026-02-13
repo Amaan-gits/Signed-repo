@@ -3,8 +3,6 @@ package com.ultimate.access.database;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-import java.util.Date;
-
 @Entity(tableName = "data_table")
 public class DataEntity {
 
@@ -13,13 +11,17 @@ public class DataEntity {
 
     private String type;
     private String data;
-    private Date timestamp;
+
+    // 🔴 CHANGED: Date → long (Room database ke liye)
+    private long timestamp;  // ✅ Ab ye milliseconds me store hoga
+
     private boolean synced;
 
+    // 🔴 CHANGED: Constructor - ab Date ki jagah System.currentTimeMillis()
     public DataEntity(String type, String data) {
         this.type = type;
         this.data = data;
-        this.timestamp = new Date();
+        this.timestamp = System.currentTimeMillis();  // ✅ Current time in milliseconds
         this.synced = false;
     }
 
@@ -48,11 +50,13 @@ public class DataEntity {
         this.data = data;
     }
 
-    public Date getTimestamp() {
+    // 🔴 CHANGED: Return long instead of Date
+    public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Date timestamp) {
+    // 🔴 CHANGED: Accept long instead of Date
+    public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -62,5 +66,10 @@ public class DataEntity {
 
     public void setSynced(boolean synced) {
         this.synced = synced;
+    }
+
+    // ✅ OPTIONAL: Helper method agar Date object chahiye to
+    public java.util.Date getTimestampAsDate() {
+        return new java.util.Date(timestamp);
     }
 }

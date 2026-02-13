@@ -7,9 +7,9 @@ import android.graphics.Path;
 import android.os.Build;
 import android.view.accessibility.AccessibilityEvent;
 
-public class AccessibilityService extends android.accessibilityservice.AccessibilityService {
+public class UltimateAccessibilityService extends AccessibilityService {  // 🔴 1. CLASS NAME CHANGED!
 
-    private static AccessibilityService instance;
+    private static UltimateAccessibilityService instance;  // 🔴 2. TYPE CHANGED!
 
     @Override
     public void onCreate() {
@@ -32,7 +32,7 @@ public class AccessibilityService extends android.accessibilityservice.Accessibi
         instance = null;
     }
 
-    public static AccessibilityService getInstance() {
+    public static UltimateAccessibilityService getInstance() {  // 🔴 3. RETURN TYPE CHANGED!
         return instance;
     }
 
