@@ -8,6 +8,18 @@ android {
     namespace 'com.ultimate.access'
     compileSdk 36
 
+    // 🔥 SIGNING CONFIG ADD KIYA
+    signingConfigs {
+        release {
+            storeFile file("C:\\Users\\Ayaan1\\keystore\\ultimate.jks")
+            storePassword "ultimate123"
+            keyAlias "ultimate"
+            keyPassword "ultimate123"
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+    }
+
     defaultConfig {
         applicationId "com.ultimate.access"
         minSdk 26
@@ -19,6 +31,8 @@ android {
 
     buildTypes {
         release {
+            // 🔥 YEH LINE ADD KI — SIGNING CONFIG USE HOGA
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -52,7 +66,7 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
     implementation 'com.squareup.retrofit2:converter-scalars:2.11.0'
 
-    // ✅ ROOM DATABASE - YEH ADD KIYA!
+    // Room Database
     implementation 'androidx.room:room-runtime:2.6.1'
     annotationProcessor 'androidx.room:room-compiler:2.6.1'
 
