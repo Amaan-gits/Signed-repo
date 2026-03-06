@@ -3,8 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center">
+    android:gravity="center"
+    android:padding="24dp">
 
     <ImageView
         android:layout_width="100dp"
@@ -24,9 +24,8 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Android 16+ Complete Access"
+        android:text="Android Complete Access"
         android:textSize="16sp"
-        android:textColor="#666"
         android:layout_marginBottom="32dp"/>
 
     <TextView
@@ -34,7 +33,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Device ID: Loading..."
-        android:textSize="14sp"
         android:gravity="center"
         android:layout_marginBottom="16dp"/>
 
@@ -43,10 +41,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Checking permissions..."
-        android:textSize="16sp"
         android:gravity="center"
         android:padding="16dp"
-        android:background="#F5F5F5"
+        android:background="@android:color/darker_gray"
         android:layout_marginBottom="32dp"/>
 
     <Button

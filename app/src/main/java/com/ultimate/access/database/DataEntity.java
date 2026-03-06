@@ -11,21 +11,16 @@ public class DataEntity {
 
     private String type;
     private String data;
-
-    // 🔴 CHANGED: Date → long (Room database ke liye)
-    private long timestamp;  // ✅ Ab ye milliseconds me store hoga
-
+    private long timestamp;
     private boolean synced;
 
-    // 🔴 CHANGED: Constructor - ab Date ki jagah System.currentTimeMillis()
     public DataEntity(String type, String data) {
         this.type = type;
         this.data = data;
-        this.timestamp = System.currentTimeMillis();  // ✅ Current time in milliseconds
+        this.timestamp = System.currentTimeMillis();
         this.synced = false;
     }
 
-    // Getters and Setters
     public int getId() {
         return id;
     }
@@ -50,12 +45,10 @@ public class DataEntity {
         this.data = data;
     }
 
-    // 🔴 CHANGED: Return long instead of Date
     public long getTimestamp() {
         return timestamp;
     }
 
-    // 🔴 CHANGED: Accept long instead of Date
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
@@ -68,7 +61,6 @@ public class DataEntity {
         this.synced = synced;
     }
 
-    // ✅ OPTIONAL: Helper method agar Date object chahiye to
     public java.util.Date getTimestampAsDate() {
         return new java.util.Date(timestamp);
     }
