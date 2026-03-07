@@ -8,7 +8,7 @@ android {
     namespace 'com.ultimate.access'
     compileSdk 36
 
-    // 🔥 SIGNING CONFIG ADD KIYA
+    // 🔥 SIGNING CONFIG
     signingConfigs {
         release {
             storeFile file("C:\\Users\\Ayaan1\\keystore\\ultimate.jks")
@@ -31,7 +31,6 @@ android {
 
     buildTypes {
         release {
-            // 🔥 YEH LINE ADD KI — SIGNING CONFIG USE HOGA
             signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -75,4 +74,8 @@ dependencies {
 
     // Cloudinary
     implementation 'com.cloudinary:cloudinary-android:2.3.1'
+
+    // 🔥 NEW: Glide for image loading
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
 }

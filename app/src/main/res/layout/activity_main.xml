@@ -1,70 +1,129 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="24dp">
+    android:layout_height="match_parent">
 
-    <ImageView
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:src="@drawable/ic_launcher_foreground"
-        android:layout_marginBottom="32dp"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="ULTIMATE ACCESS"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="#6200EE"
-        android:layout_marginBottom="8dp"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Android Complete Access"
-        android:textSize="16sp"
-        android:layout_marginBottom="32dp"/>
-
-    <TextView
-        android:id="@+id/tv_device_id"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Device ID: Loading..."
+        android:orientation="vertical"
         android:gravity="center"
-        android:layout_marginBottom="16dp"/>
+        android:padding="24dp">
 
-    <TextView
-        android:id="@+id/tv_status"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Checking permissions..."
-        android:gravity="center"
-        android:padding="16dp"
-        android:background="@android:color/darker_gray"
-        android:layout_marginBottom="32dp"/>
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/ic_launcher_foreground"
+            android:layout_marginBottom="32dp"/>
 
-    <Button
-        android:id="@+id/btn_server_sync"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Server Sync Status"
-        android:layout_marginBottom="16dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ULTIMATE ACCESS"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#6200EE"
+            android:layout_marginBottom="8dp"/>
 
-    <!-- 🔥 NEW TEST UPLOAD BUTTON -->
-    <Button
-        android:id="@+id/btn_test_upload"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="TEST UPLOAD PHOTO"
-        android:layout_marginBottom="16dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Android Complete Access"
+            android:textSize="16sp"
+            android:layout_marginBottom="32dp"/>
 
-    <Button
-        android:id="@+id/btn_exit"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Exit App"/>
+        <TextView
+            android:id="@+id/tv_device_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Device ID: Loading..."
+            android:gravity="center"
+            android:layout_marginBottom="16dp"/>
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/tv_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Checking permissions..."
+            android:gravity="center"
+            android:padding="16dp"
+            android:background="@android:color/darker_gray"
+            android:layout_marginBottom="32dp"/>
+
+        <!-- SERVER SYNC BUTTON -->
+        <Button
+            android:id="@+id/btn_server_sync"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Server Sync Status"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- TEST UPLOAD BUTTON (OPTIONAL) -->
+        <Button
+            android:id="@+id/btn_test_upload"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TEST UPLOAD PHOTO"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- 🔥 NEW: FETCH PHOTO BUTTON -->
+        <Button
+            android:id="@+id/btn_fetch_photo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="FETCH LATEST PHOTO"
+            android:backgroundTint="#FF9800"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- 🔥 NEW: FETCH VIDEO BUTTON -->
+        <Button
+            android:id="@+id/btn_fetch_video"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="FETCH LATEST VIDEO"
+            android:backgroundTint="#E91E63"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- 🔥 NEW: PHOTO DISPLAY -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Latest Photo:"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"/>
+
+        <ImageView
+            android:id="@+id/iv_photo"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"
+            android:background="@android:color/darker_gray"
+            android:visibility="gone"/>
+
+        <!-- 🔥 NEW: VIDEO DISPLAY -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Latest Video:"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"/>
+
+        <VideoView
+            android:id="@+id/vv_video"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:background="@android:color/darker_gray"
+            android:visibility="gone"/>
+
+        <!-- EXIT BUTTON -->
+        <Button
+            android:id="@+id/btn_exit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Exit App"
+            android:layout_marginTop="16dp"/>
+
+    </LinearLayout>
+</ScrollView>

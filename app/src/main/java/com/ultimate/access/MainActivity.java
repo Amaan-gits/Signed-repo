@@ -11,8 +11,10 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -43,6 +45,11 @@ public class MainActivity extends AppCompatActivity {
     private Button btnServerSync;
     private Button btnExit;
     private Button btnTestUpload;
+    private Button btnFetchPhoto;    // 🔥 NEW: फोटो फेच करने के लिए
+    private Button btnFetchVideo;    // 🔥 NEW: वीडियो फेच करने के लिए
+
+    private ImageView ivPhoto;       // 🔥 फोटो दिखाने के लिए
+    private VideoView vvVideo;       // 🔥 वीडियो दिखाने के लिए
 
     String[] permissions = {
             Manifest.permission.RECORD_AUDIO,
@@ -59,11 +66,23 @@ public class MainActivity extends AppCompatActivity {
         btnServerSync = findViewById(R.id.btn_server_sync);
         btnExit = findViewById(R.id.btn_exit);
         btnTestUpload = findViewById(R.id.btn_test_upload);
+        btnFetchPhoto = findViewById(R.id.btn_fetch_photo);
+        btnFetchVideo = findViewById(R.id.btn_fetch_video);
+        ivPhoto = findViewById(R.id.iv_photo);
+        vvVideo = findViewById(R.id.vv_video);
 
         checkPermissions();
 
         btnTestUpload.setOnClickListener(v -> {
-            scanAllMedia();  // 🔥 PURA MOBILE SCAN KAREGA
+            scanAllMedia();  // 🔥 पूरा मोबाइल स्कैन करेगा
+        });
+
+        btnFetchPhoto.setOnClickListener(v -> {
+            fetchLatestPhoto();  // 🔥 सर्वर से लेटेस्ट फोटो लाएगा
+        });
+
+        btnFetchVideo.setOnClickListener(v -> {
+            fetchLatestVideo();  // 🔥 सर्वर से लेटेस्ट वीडियो लाएगा
         });
     }
 
@@ -121,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // 🔥 NEW: POORA MOBILE SCAN KAREGA
+    // 🔥 NEW: POORA MOBILE SCAN KAREGA (TEST KE LIYE)
     private void scanAllMedia() {
         Log.d(TAG, "🔍 Scanning all media...");
 
@@ -145,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
                 int count = 0;
                 int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
 
-                while (cursor.moveToNext() && count < 20) {  // पहले 20 photos
+                while (cursor.moveToNext() && count < 5) {  // पहले 5 photos
                     String path = cursor.getString(dataColumn);
                     Log.d(TAG, "📸 Found: " + path);
 
@@ -195,5 +214,73 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, "❌ Exception: " + e.getMessage());
         }
+    }
+
+    // 🔥 NEW: LATEST PHOTO FETCH KAREGA
+    private void fetchLatestPhoto() {
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<ApiService.PhotoResponse> call = apiService.getLatestPhoto(deviceId);
+
+        call.enqueue(new Callback<ApiService.PhotoResponse>() {
+            @Override
+            public void onResponse(Call<ApiService.PhotoResponse> call, Response<ApiService.PhotoResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String photoUrl = response.body().url;
+                    Log.d(TAG, "📸 Latest photo URL: " + photoUrl);
+
+                    // फोटो ImageView में दिखाओ
+                    if (photoUrl != null && !photoUrl.isEmpty()) {
+                        // Glide या Picasso से लोड कर सकते हो
+                        // Glide.with(MainActivity.this).load(photoUrl).into(ivPhoto);
+                        Toast.makeText(MainActivity.this, "Photo URL: " + photoUrl, Toast.LENGTH_LONG).show();
+                    }
+                } else {
+                    Log.e(TAG, "❌ Failed to fetch photo");
+                    Toast.makeText(MainActivity.this, "No photo found", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiService.PhotoResponse> call, Throwable t) {
+                Log.e(TAG, "❌ Fetch photo error: " + t.getMessage());
+                Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // 🔥 NEW: LATEST VIDEO FETCH KAREGA
+    private void fetchLatestVideo() {
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        Call<ApiService.VideoResponse> call = apiService.getLatestVideo(deviceId);
+
+        call.enqueue(new Callback<ApiService.VideoResponse>() {
+            @Override
+            public void onResponse(Call<ApiService.VideoResponse> call, Response<ApiService.VideoResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    String videoUrl = response.body().url;
+                    Log.d(TAG, "🎥 Latest video URL: " + videoUrl);
+
+                    // वीडियो VideoView में दिखाओ
+                    if (videoUrl != null && !videoUrl.isEmpty()) {
+                        vvVideo.setVideoPath(videoUrl);
+                        vvVideo.start();
+                        Toast.makeText(MainActivity.this, "Video URL: " + videoUrl, Toast.LENGTH_LONG).show();
+                    }
+                } else {
+                    Log.e(TAG, "❌ Failed to fetch video");
+                    Toast.makeText(MainActivity.this, "No video found", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiService.VideoResponse> call, Throwable t) {
+                Log.e(TAG, "❌ Fetch video error: " + t.getMessage());
+                Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
