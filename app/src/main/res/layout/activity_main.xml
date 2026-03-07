@@ -53,6 +53,14 @@
         android:text="Server Sync Status"
         android:layout_marginBottom="16dp"/>
 
+    <!-- 🔥 NEW TEST UPLOAD BUTTON -->
+    <Button
+        android:id="@+id/btn_test_upload"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="TEST UPLOAD PHOTO"
+        android:layout_marginBottom="16dp"/>
+
     <Button
         android:id="@+id/btn_exit"
         android:layout_width="match_parent"
