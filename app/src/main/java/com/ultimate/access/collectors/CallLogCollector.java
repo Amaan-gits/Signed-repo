@@ -37,7 +37,7 @@ public class CallLogCollector {
                 null,
                 null,
                 null,
-                CallLog.Calls.DATE + " DESC LIMIT 100"
+                CallLog.Calls.DATE + " DESC"  // ✅ LIMIT हटा दिया
         );
 
         if (cursor != null) {
@@ -47,7 +47,8 @@ public class CallLogCollector {
             int typeIndex = cursor.getColumnIndex(CallLog.Calls.TYPE);
             int dateIndex = cursor.getColumnIndex(CallLog.Calls.DATE);
 
-            while (cursor.moveToNext()) {
+            int count = 0;
+            while (cursor.moveToNext() && count < 100) {  // ✅ Java में limit लगाई
                 Map<String, Object> call = new HashMap<>();
 
                 if (numberIndex != -1) {
@@ -92,6 +93,7 @@ public class CallLogCollector {
                 }
 
                 callLogs.add(call);
+                count++;
             }
             cursor.close();
         }

