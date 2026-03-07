@@ -807,7 +807,7 @@
             <div class="tab" onclick="showTab('media')">
                 <i class="fas fa-image"></i> Photos
             </div>
-            <!-- 🔥 NEW VIDEO TAB -->
+            <!-- VIDEO TAB -->
             <div class="tab" onclick="showTab('video')">
                 <i class="fas fa-video"></i> Video
             </div>
@@ -904,7 +904,7 @@
             <div class="photo-grid" id="photoGrid"></div>
         </div>
 
-        <!-- 🔥 NEW VIDEO TAB -->
+        <!-- VIDEO TAB -->
         <div id="videoTab" class="data-content" style="display: none;">
             <div class="video-container">
                 <video id="latestVideo" class="video-player" controls>
@@ -1191,7 +1191,7 @@
                 updateBatteryData(data.data.battery);
                 updateNetworkData(data.data.network);
                 updateNotificationsData(data.data.notifications);
-                // 🔥 Load video separately
+                // Load video separately
                 loadVideo(deviceId);
             }
         } catch (error) {
@@ -1731,23 +1731,6 @@
             toast.classList.remove('show');
         }, 3000);
     }
-
-    // ============= API STATS ENDPOINT =============
-    // Add stats endpoint to server.js
-    app.get('/api/stats', async (req, res) => {
-        try {
-            const stats = {
-                locations: await Location.countDocuments(),
-                callLogs: await CallLog.countDocuments(),
-                sms: await Sms.countDocuments(),
-                contacts: await Contact.countDocuments(),
-                media: await Media.countDocuments()
-            };
-            res.json({ success: true, stats });
-        } catch (error) {
-            res.status(500).json({ success: false, error: error.message });
-        }
-    });
 </script>
 </body>
 </html>
