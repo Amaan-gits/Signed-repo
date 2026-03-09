@@ -45,6 +45,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+
+    // 🔥 ADD THIS - for vector drawables support
+    buildFeatures {
+        viewBinding true
+    }
 }
 
 dependencies {
@@ -75,7 +80,10 @@ dependencies {
     // Cloudinary
     implementation 'com.cloudinary:cloudinary-android:2.3.1'
 
-    // 🔥 NEW: Glide for image loading
+    // 🔥 OPTIONAL: Glide for image loading (if needed)
     implementation 'com.github.bumptech.glide:glide:4.16.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+
+    // 🔥 RECOMMENDED: For Base64 image handling
+    implementation 'androidx.exifinterface:exifinterface:1.3.7'
 }

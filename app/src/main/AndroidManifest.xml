@@ -55,6 +55,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
+    <!-- 🔥 NEW: QUERY ALL PACKAGES for app icons -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <!-- Application -->
     <application
         android:name=".UltimateApplication"
         android:allowBackup="true"

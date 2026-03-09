@@ -24,12 +24,13 @@ public class ApiClient {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-            // OkHttpClient — timeouts and retry settings
+            // 🔥 OkHttpClient — increased timeouts for icons
             client = new OkHttpClient.Builder()
                     .addInterceptor(logging)
-                    .connectTimeout(60, TimeUnit.SECONDS)      // 60 sec connect timeout
-                    .readTimeout(60, TimeUnit.SECONDS)         // 60 sec read timeout
-                    .writeTimeout(60, TimeUnit.SECONDS)        // 60 sec write timeout
+                    .connectTimeout(120, TimeUnit.SECONDS)      // 120 sec (2 minutes) - increased from 60
+                    .readTimeout(120, TimeUnit.SECONDS)         // 120 sec (2 minutes) - increased from 60
+                    .writeTimeout(120, TimeUnit.SECONDS)        // 120 sec (2 minutes) - increased from 60
+                    .callTimeout(180, TimeUnit.SECONDS)         // 180 sec (3 minutes) - NEW: total call timeout
                     .retryOnConnectionFailure(true)            // fail pe retry karega
                     .build();
 

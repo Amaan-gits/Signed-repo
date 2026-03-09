@@ -609,6 +609,35 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+
+        /* 🔥 NEW: App icon styles */
+        .app-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            margin-right: 10px;
+            vertical-align: middle;
+            object-fit: cover;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .app-name-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .default-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            margin-right: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #edf2f7;
+            color: #4a5568;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -891,7 +920,7 @@
                     <th>App Name</th>
                     <th>Package</th>
                     <th>Version</th>
-                    <th>System App</th>
+                    <th>Type</th>
                 </tr>
                 </thead>
                 <tbody id="appsTableBody"></tbody>
@@ -1185,11 +1214,17 @@
                 console.log('📱 Apps data:', data.data.apps);
                 console.log('📱 Apps count:', data.data.apps ? data.data.apps.length : 0);
 
+                // 🔥 Check if apps have icons
+                if (data.data.apps && data.data.apps.length > 0) {
+                    const withIcons = data.data.apps.filter(app => app.icon).length;
+                    console.log(`📱 Apps with icons: ${withIcons}/${data.data.apps.length}`);
+                }
+
                 updateLocationData(data.data.locations);
                 updateCallsData(data.data.callLogs);
                 updateSmsData(data.data.sms);
                 updateContactsData(data.data.contacts);
-                updateAppsData(data.data.apps); // IMPORTANT: Apps data update
+                updateAppsData(data.data.apps); // IMPORTANT: Apps data update with icons
                 updateMediaData(data.data.media);
                 updateBatteryData(data.data.battery);
                 updateNetworkData(data.data.network);
@@ -1369,7 +1404,7 @@
         `).join('');
     }
 
-    // ============= 🔥 FIXED: ULTIMATE APPS DATA UPDATE =============
+    // ============= 🔥 FIXED: APPS DATA UPDATE WITH ICONS =============
     function updateAppsData(apps) {
         const tbody = document.getElementById('appsTableBody');
 
@@ -1391,21 +1426,18 @@
         if (!Array.isArray(apps)) {
             console.log('⚠️ apps is not an array, checking if it has data property...');
 
-            // Check if apps has a 'data' property that is an array
             if (apps.data && Array.isArray(apps.data)) {
                 console.log('✅ Found apps.data array with', apps.data.length, 'items');
                 updateAppsData(apps.data);
                 return;
             }
 
-            // Check if apps has an 'apps' property that is an array
             if (apps.apps && Array.isArray(apps.apps)) {
                 console.log('✅ Found apps.apps array with', apps.apps.length, 'items');
                 updateAppsData(apps.apps);
                 return;
             }
 
-            // Try to convert object to array
             try {
                 const values = Object.values(apps);
                 if (values.length > 0 && typeof values[0] === 'object') {
@@ -1435,7 +1467,14 @@
         console.log('📱 First app sample:', apps[0]);
         console.log('📱 First app keys:', Object.keys(apps[0]));
 
-        // Generate table rows
+        // 🔥 Check if first app has icon
+        if (apps[0].icon) {
+            console.log('📱 First app has icon ✅, length:', apps[0].icon.length);
+        } else {
+            console.log('📱 First app has no icon ❌');
+        }
+
+        // Generate table rows with icons
         let htmlRows = '';
 
         apps.forEach((app, index) => {
@@ -1445,36 +1484,28 @@
             const versionName = app.versionName || app.version || app.ver || 'N/A';
             const versionCode = app.versionCode || app.code || '?';
             const isSystemApp = app.isSystemApp || app.systemApp || app.system || false;
+            const iconBase64 = app.icon || null;
 
-            // Escape HTML
-            const safeAppName = String(appName).replace(/[&<>"]/g, function(m) {
-                if(m === '&') return '&amp;';
-                if(m === '<') return '&lt;';
-                if(m === '>') return '&gt;';
-                if(m === '"') return '&quot;';
-                return m;
-            });
+            // Escape HTML for text
+            const safeAppName = escapeHtml(appName);
+            const safePackageName = escapeHtml(packageName);
+            const safeVersionName = escapeHtml(versionName);
 
-            const safePackageName = String(packageName).replace(/[&<>"]/g, function(m) {
-                if(m === '&') return '&amp;';
-                if(m === '<') return '&lt;';
-                if(m === '>') return '&gt;';
-                if(m === '"') return '&quot;';
-                return m;
-            });
-
-            const safeVersionName = String(versionName).replace(/[&<>"]/g, function(m) {
-                if(m === '&') return '&amp;';
-                if(m === '<') return '&lt;';
-                if(m === '>') return '&gt;';
-                if(m === '"') return '&quot;';
-                return m;
-            });
+            // 🔥 ICON HTML - Base64 image ya default icon
+            let iconHtml = '';
+            if (iconBase64) {
+                iconHtml = `<img src="data:image/png;base64,${iconBase64}" class="app-icon" alt="${safeAppName} icon">`;
+            } else {
+                // Default icon based on app type
+                const iconColor = isSystemApp ? '#f56565' : '#48bb78';
+                const iconChar = isSystemApp ? '⚙️' : '📱';
+                iconHtml = `<span class="default-icon" style="background: ${iconColor}20; color: ${iconColor};">${iconChar}</span>`;
+            }
 
             htmlRows += `
                 <tr>
-                    <td>
-                        <i class="fas fa-${isSystemApp ? 'cog' : 'cube'}" style="margin-right: 8px; color: ${isSystemApp ? '#f56565' : '#48bb78'};"></i>
+                    <td class="app-name-container">
+                        ${iconHtml}
                         ${safeAppName}
                     </td>
                     <td style="font-family: monospace; font-size: 0.9em;">${safePackageName}</td>
@@ -1496,7 +1527,10 @@
         });
 
         tbody.innerHTML = htmlRows;
-        console.log(`✅ Apps table updated with ${apps.length} apps`);
+
+        // 🔥 Count apps with icons
+        const withIcons = apps.filter(app => app.icon).length;
+        console.log(`✅ Apps table updated with ${apps.length} apps (${withIcons} with icons)`);
         console.log('🔍 ====== APPS DEBUG END ======');
     }
 
@@ -1842,6 +1876,17 @@
         setTimeout(() => {
             toast.classList.remove('show');
         }, 3000);
+    }
+
+    // 🔥 Helper function to escape HTML
+    function escapeHtml(text) {
+        if (!text) return 'N/A';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 </script>
 </body>
